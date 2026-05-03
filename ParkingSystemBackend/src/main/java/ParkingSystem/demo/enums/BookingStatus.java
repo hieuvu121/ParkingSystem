@@ -1,5 +1,5 @@
 package ParkingSystem.demo.enums;
 
 public enum BookingStatus {
-    PENDING,APPROVED,EXPIRED
+    PENDING, APPROVED, EXPIRED, CANCELLED
 }
