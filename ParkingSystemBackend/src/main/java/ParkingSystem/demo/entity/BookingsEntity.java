@@ -28,6 +28,7 @@ public class BookingsEntity {
     private LocalDateTime endTime;
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private BookingStatus status;
 
     @ManyToOne
