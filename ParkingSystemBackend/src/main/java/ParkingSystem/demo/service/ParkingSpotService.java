@@ -65,7 +65,8 @@ public class ParkingSpotService {
         List<ZoneSummary> byZone = zoneRepository.findAll().stream().map(z -> {
             long zTotal = spotRepository.countByZone_idId(z.getId());
             long zAvail = spotRepository.countByZone_idIdAndStatus(z.getId(), SpotStatus.AVAILABLE);
-            return new ZoneSummary(z.getId(), zTotal, zAvail, zTotal - zAvail);
+            long zOccupied = spotRepository.countByZone_idIdAndStatus(z.getId(), SpotStatus.OCCUPIED);
+            return new ZoneSummary(z.getId(), zTotal, zAvail, zOccupied);
         }).toList();
         return new DashboardResponse(total, available, occupied, byZone);
     }
