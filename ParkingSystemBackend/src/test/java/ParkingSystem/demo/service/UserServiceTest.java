@@ -72,4 +72,15 @@ class UserServiceTest {
         assertThatThrownBy(() -> userService.deleteUser(99L))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
+
+    @Test
+    void listAll_returnsAllUsers() {
+        when(userRepository.findAll()).thenReturn(List.of(
+                user(1L, "Alice", Role.USERS),
+                user(2L, "Bob", Role.ADMIN)
+        ));
+        var result = userService.listAll();
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).fullName()).isEqualTo("Alice");
+    }
 }
