@@ -48,6 +48,9 @@ public class BookingService {
 
     public void cancel(Long bookingId, Long userId) {
         BookingsEntity booking = findOrThrow(bookingId);
+        if (!booking.getUserId().getId().equals(userId)) {
+            throw new ResourceNotFoundException("Booking not found with id: " + bookingId);
+        }
         booking.setStatus(BookingStatus.CANCELLED);
         bookingRepository.save(booking);
         spotService.updateStatus(booking.getSpotId().getId(), SpotStatus.AVAILABLE);
