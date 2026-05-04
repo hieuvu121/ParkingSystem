@@ -106,8 +106,8 @@ Response `200`:
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/api/users/me` | USER / ADMIN | Get own profile |
-| PUT | `/api/users/me` | USER / ADMIN | Update own full name |
+| GET | `/api/users/me` | USERS / ADMIN | Get own profile |
+| PUT | `/api/users/me` | USERS / ADMIN | Update own full name |
 
 #### Get Profile
 
@@ -118,7 +118,7 @@ curl http://localhost:8080/api/users/me \
 
 Response `200`:
 ```json
-{ "id": 1, "fullName": "John Doe", "email": "john@example.com", "role": "USER" }
+{ "id": 1, "fullName": "John Doe", "email": "john@example.com", "role": "USERS" }
 ```
 
 #### Update Profile
@@ -132,7 +132,7 @@ curl -X PUT http://localhost:8080/api/users/me \
 
 Response `200`:
 ```json
-{ "id": 1, "fullName": "John Updated", "email": "john@example.com", "role": "USER" }
+{ "id": 1, "fullName": "John Updated", "email": "john@example.com", "role": "USERS" }
 ```
 
 ---
@@ -155,7 +155,7 @@ curl http://localhost:8080/api/users \
 Response `200`:
 ```json
 [
-  { "id": 1, "fullName": "John Doe", "email": "john@example.com", "role": "USER" },
+  { "id": 1, "fullName": "John Doe", "email": "john@example.com", "role": "USERS" },
   { "id": 2, "fullName": "Admin User", "email": "admin@example.com", "role": "ADMIN" }
 ]
 ```
@@ -173,6 +173,141 @@ Response `200`:
 ```json
 { "id": 1, "fullName": "John Doe", "email": "john@example.com", "role": "ADMIN" }
 ```
+
+---
+
+### Bookings
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/bookings` | USERS | Create a booking |
+| GET | `/api/bookings/my` | USERS | List own bookings |
+| GET | `/api/bookings/{id}` | Any authenticated | Get booking by ID |
+| PATCH | `/api/bookings/{id}/cancel` | USERS | Cancel a booking |
+| GET | `/api/admin/bookings` | ADMIN | List all bookings |
+
+#### Create Booking
+
+```bash
+curl -X POST http://localhost:8080/api/bookings \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"spotId":1,"startTime":"2026-05-10T09:00:00","endTime":"2026-05-10T11:00:00"}'
+```
+
+Response `201`:
+```json
+{
+  "id": 1,
+  "spotId": 1,
+  "userId": 1,
+  "startTime": "2026-05-10T09:00:00",
+  "endTime": "2026-05-10T11:00:00",
+  "status": "APPROVED"
+}
+```
+
+Returns `409` if another PENDING or APPROVED booking already occupies that spot in the requested time window.
+
+#### List Own Bookings
+
+```bash
+curl http://localhost:8080/api/bookings/my \
+  -H "Authorization: Bearer <token>"
+```
+
+Response `200`: array of booking objects (expired bookings are auto-transitioned on read).
+
+#### Cancel Booking
+
+```bash
+curl -X PATCH http://localhost:8080/api/bookings/1/cancel \
+  -H "Authorization: Bearer <token>"
+```
+
+Response `204 No Content`. Returns `404` if the booking doesn't belong to the requesting user.
+
+---
+
+### Packages
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/packages` | Any authenticated | List all packages |
+| POST | `/api/packages` | ADMIN | Create a package |
+| PUT | `/api/packages/{id}` | ADMIN | Update a package |
+| DELETE | `/api/packages/{id}` | ADMIN | Delete a package |
+
+#### List Packages
+
+```bash
+curl http://localhost:8080/api/packages \
+  -H "Authorization: Bearer <token>"
+```
+
+Response `200`:
+```json
+[
+  { "id": 1, "name": "Monthly", "description": "30-day unlimited access", "durations": 30, "price": 500000 }
+]
+```
+
+#### Create Package
+
+```bash
+curl -X POST http://localhost:8080/api/packages \
+  -H "Authorization: Bearer <admin_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Monthly","description":"30-day unlimited access","durations":30,"price":500000}'
+```
+
+Response `201`:
+```json
+{ "id": 1, "name": "Monthly", "description": "30-day unlimited access", "durations": 30, "price": 500000 }
+```
+
+---
+
+### Subscriptions
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/subscriptions` | USERS | Subscribe to a package |
+| GET | `/api/subscriptions/my` | USERS | Get own active subscription |
+| GET | `/api/admin/subscriptions` | ADMIN | List all subscriptions |
+
+#### Subscribe
+
+```bash
+curl -X POST http://localhost:8080/api/subscriptions \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"packageId":1}'
+```
+
+Response `201`:
+```json
+{
+  "id": 1,
+  "userId": 1,
+  "packageId": 1,
+  "packageName": "Monthly",
+  "startDate": "2026-05-04T...",
+  "endDate": "2026-06-03T...",
+  "price": 500000
+}
+```
+
+Returns `409` if the user already has an active subscription.
+
+#### Get Active Subscription
+
+```bash
+curl http://localhost:8080/api/subscriptions/my \
+  -H "Authorization: Bearer <token>"
+```
+
+Response `200`: subscription object. Returns `404` if no active subscription exists.
 
 #### Delete User
 
@@ -356,10 +491,10 @@ Response `200`:
 
 ### Role-Based Access
 
-Two roles exist: `USER` and `ADMIN`.
+Two roles exist: `USERS` and `ADMIN`.
 
-- `USER`: can view their own profile, browse zones and spots, view the dashboard.
-- `ADMIN`: all of the above, plus create/update/delete zones and spots, manage users, trigger webhook/simulate.
+- `USERS`: can view/update their own profile, browse zones and spots, view the dashboard, create and cancel bookings, subscribe to packages.
+- `ADMIN`: all of the above, plus create/update/delete zones, spots, and packages; manage users; trigger webhook/simulate; view all bookings and subscriptions.
 
 Roles are enforced both at route level (Spring Security) and method level (`@PreAuthorize`).
 
@@ -380,6 +515,20 @@ When a spot's status changes, the service notifies `RealtimeService` (currently 
 ### Real-time Dashboard
 
 The dashboard endpoint (`GET /api/spots/dashboard`) provides an instant snapshot of total, available, and occupied counts — both system-wide and broken down by zone. In Phase 5, status changes will also be pushed to connected clients over WebSocket (STOMP).
+
+### Bookings
+
+A user creates a booking for a specific spot with a start and end time. The system checks for time-window conflicts with other PENDING or APPROVED bookings on the same spot. If none exist, the booking is saved as APPROVED and the spot is immediately marked OCCUPIED.
+
+Bookings expire automatically via two mechanisms:
+- A scheduled job runs every 5 minutes and expires all APPROVED bookings whose end time has passed.
+- Any read operation (`GET /api/bookings/my`, `GET /api/bookings/{id}`) also checks and expires on the fly.
+
+Cancelling a booking sets its status to CANCELLED and frees the spot back to AVAILABLE. Only the booking owner can cancel their own booking.
+
+### Packages and Subscriptions
+
+An admin creates packages with a name, description, duration (in days), and price. Users subscribe to a package, which creates a subscription valid from the current date for the package's duration. Only one active subscription per user is allowed at a time.
 
 ---
 
@@ -406,8 +555,6 @@ All errors return a consistent JSON body:
 
 | Phase | Feature |
 |-------|---------|
-| Phase 3 | Booking Management (create, approve, cancel, expire) |
-| Phase 4 | Subscription Packages |
-| Phase 5 | Real-time WebSocket push (STOMP) for spot and dashboard updates |
-| Phase 6 | Predictive Availability & Smart Recommendations (rule-based ML) |
-| Phase 6 | Admin Analytics (peak hours, occupancy trends) |
+| Phase 4 | Real-time WebSocket push (STOMP) for spot and dashboard updates |
+| Phase 5 | Predictive Availability & Smart Recommendations (rule-based ML) |
+| Phase 5 | Admin Analytics (peak hours, occupancy trends) |
