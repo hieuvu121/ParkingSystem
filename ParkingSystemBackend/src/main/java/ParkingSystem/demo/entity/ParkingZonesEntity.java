@@ -22,4 +22,10 @@ public class ParkingZonesEntity {
 
     @Column
     private String type;
+
+    @Column
+    private Double lat;
+
+    @Column
+    private Double lng;
 }
