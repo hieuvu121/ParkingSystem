@@ -45,7 +45,11 @@ public class BookingService {
     }
 
     public BookingResponse getById(Long bookingId, Long userId) {
-        return checkAndExpire(findOrThrow(bookingId));
+        BookingsEntity booking = findOrThrow(bookingId);
+        if (!booking.getUserId().getId().equals(userId)) {
+            throw new ResourceNotFoundException("Booking not found with id: " + bookingId);
+        }
+        return checkAndExpire(booking);
     }
 
     @Transactional
