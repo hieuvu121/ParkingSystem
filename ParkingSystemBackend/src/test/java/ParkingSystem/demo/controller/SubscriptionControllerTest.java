@@ -1,5 +1,6 @@
 package ParkingSystem.demo.controller;
 
+import ParkingSystem.demo.dto.PageResponse;
 import ParkingSystem.demo.dto.subscription.SubscriptionRequest;
 import ParkingSystem.demo.dto.subscription.SubscriptionResponse;
 import ParkingSystem.demo.entity.UserEntity;
@@ -11,6 +12,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -82,9 +85,10 @@ class SubscriptionControllerTest {
 
     @Test
     void listAll_admin_returnsAllSubscriptions() throws Exception {
-        when(subscriptionService.listAll()).thenReturn(List.of(response()));
+        PageResponse<SubscriptionResponse> page = PageResponse.from(new PageImpl<>(List.of(response())));
+        when(subscriptionService.listAll(any(Pageable.class))).thenReturn(page);
         mockMvc.perform(get("/api/admin/subscriptions"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].packageName").value("Monthly"));
+                .andExpect(jsonPath("$.content[0].packageName").value("Monthly"));
     }
 }

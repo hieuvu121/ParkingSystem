@@ -1,5 +1,6 @@
 package ParkingSystem.demo.controller;
 
+import ParkingSystem.demo.dto.PageResponse;
 import ParkingSystem.demo.dto.user.UpdateProfileRequest;
 import ParkingSystem.demo.dto.user.UpdateRoleRequest;
 import ParkingSystem.demo.dto.user.UserProfileResponse;
@@ -13,6 +14,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -83,10 +86,11 @@ class UserControllerTest {
 
     @Test
     void listUsers_admin_returnsAll() throws Exception {
-        when(userService.listAll()).thenReturn(List.of(profile(1L), profile(2L)));
+        PageResponse<UserProfileResponse> page = PageResponse.from(new PageImpl<>(List.of(profile(1L), profile(2L))));
+        when(userService.listAll(any(Pageable.class))).thenReturn(page);
         mockMvc.perform(get("/api/admin/users"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2));
+                .andExpect(jsonPath("$.content.length()").value(2));
     }
 
     @Test

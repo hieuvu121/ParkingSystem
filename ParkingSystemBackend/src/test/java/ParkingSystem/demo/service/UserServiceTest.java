@@ -9,6 +9,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -75,12 +78,12 @@ class UserServiceTest {
 
     @Test
     void listAll_returnsAllUsers() {
-        when(userRepository.findAll()).thenReturn(List.of(
+        when(userRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(
                 user(1L, "Alice", Role.USERS),
                 user(2L, "Bob", Role.ADMIN)
-        ));
-        var result = userService.listAll();
-        assertThat(result).hasSize(2);
-        assertThat(result.get(0).fullName()).isEqualTo("Alice");
+        )));
+        var result = userService.listAll(PageRequest.of(0, 20));
+        assertThat(result.content()).hasSize(2);
+        assertThat(result.content().get(0).fullName()).isEqualTo("Alice");
     }
 }

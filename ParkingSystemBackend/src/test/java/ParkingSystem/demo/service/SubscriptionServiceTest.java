@@ -11,6 +11,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.Date;
 import java.util.List;
@@ -99,8 +102,9 @@ class SubscriptionServiceTest {
     void listAll_returnsAllSubscriptions() {
         UserEntity user = user();
         PackagesEntity pkg = pkg();
-        when(subscriptionRepository.findAll()).thenReturn(List.of(sub(user, pkg)));
+        when(subscriptionRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(sub(user, pkg))));
 
-        assertThat(subscriptionService.listAll()).hasSize(1);
+        var result = subscriptionService.listAll(PageRequest.of(0, 20));
+        assertThat(result.content()).hasSize(1);
     }
 }

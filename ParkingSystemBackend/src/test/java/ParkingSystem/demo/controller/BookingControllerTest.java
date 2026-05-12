@@ -1,5 +1,6 @@
 package ParkingSystem.demo.controller;
 
+import ParkingSystem.demo.dto.PageResponse;
 import ParkingSystem.demo.dto.booking.BookingResponse;
 import ParkingSystem.demo.entity.UserEntity;
 import ParkingSystem.demo.enums.BookingStatus;
@@ -11,6 +12,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -98,9 +101,10 @@ class BookingControllerTest {
 
     @Test
     void listAll_admin_returnsAll() throws Exception {
-        when(bookingService.listAll()).thenReturn(List.of(bookingResponse()));
+        PageResponse<BookingResponse> page = PageResponse.from(new PageImpl<>(List.of(bookingResponse())));
+        when(bookingService.listAll(any(Pageable.class))).thenReturn(page);
         mockMvc.perform(get("/api/admin/bookings"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].userId").value(1));
+                .andExpect(jsonPath("$.content[0].userId").value(1));
     }
 }

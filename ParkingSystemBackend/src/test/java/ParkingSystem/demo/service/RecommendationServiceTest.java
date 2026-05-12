@@ -12,7 +12,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -35,9 +34,14 @@ class RecommendationServiceTest {
         return new AvailabilityPredictionResponse(zoneId, "2026-05-04T09:00", prob);
     }
 
+    private Object[] row(long zoneId, long count) {
+        return new Object[]{zoneId, count};
+    }
+
     @Test
     void recommend_noZones_returnsEmpty() {
         when(zoneRepository.findAll()).thenReturn(List.of());
+        when(spotRepository.countAvailableByZone(SpotStatus.AVAILABLE)).thenReturn(List.of());
         assertThat(recommendationService.recommend(null, null)).isEmpty();
     }
 
@@ -46,8 +50,8 @@ class RecommendationServiceTest {
         ParkingZonesEntity near = zone(1L, 10.0, 106.0);
         ParkingZonesEntity far = zone(2L, 20.0, 107.0);
         when(zoneRepository.findAll()).thenReturn(List.of(near, far));
-        when(spotRepository.countByZone_idIdAndStatus(1L, SpotStatus.AVAILABLE)).thenReturn(5L);
-        when(spotRepository.countByZone_idIdAndStatus(2L, SpotStatus.AVAILABLE)).thenReturn(3L);
+        when(spotRepository.countAvailableByZone(SpotStatus.AVAILABLE))
+                .thenReturn(List.of(row(1L, 5L), row(2L, 3L)));
         when(predictionService.predict(eq(1L), any())).thenReturn(prediction(1L, 0.8));
 
         var result = recommendationService.recommend(10.0, 106.0);
@@ -62,8 +66,8 @@ class RecommendationServiceTest {
         ParkingZonesEntity zone1 = zone(1L, null, null);
         ParkingZonesEntity zone2 = zone(2L, null, null);
         when(zoneRepository.findAll()).thenReturn(List.of(zone1, zone2));
-        when(spotRepository.countByZone_idIdAndStatus(1L, SpotStatus.AVAILABLE)).thenReturn(10L);
-        when(spotRepository.countByZone_idIdAndStatus(2L, SpotStatus.AVAILABLE)).thenReturn(2L);
+        when(spotRepository.countAvailableByZone(SpotStatus.AVAILABLE))
+                .thenReturn(List.of(row(1L, 10L), row(2L, 2L)));
         when(predictionService.predict(eq(1L), any())).thenReturn(prediction(1L, 0.9));
 
         var result = recommendationService.recommend(null, null);
@@ -77,7 +81,7 @@ class RecommendationServiceTest {
     void recommend_allFull_fallsBackToPrediction() {
         ParkingZonesEntity zone1 = zone(1L, null, null);
         when(zoneRepository.findAll()).thenReturn(List.of(zone1));
-        when(spotRepository.countByZone_idIdAndStatus(1L, SpotStatus.AVAILABLE)).thenReturn(0L);
+        when(spotRepository.countAvailableByZone(SpotStatus.AVAILABLE)).thenReturn(List.of());
         when(predictionService.predict(eq(1L), any())).thenReturn(prediction(1L, 0.6));
 
         var result = recommendationService.recommend(null, null);
