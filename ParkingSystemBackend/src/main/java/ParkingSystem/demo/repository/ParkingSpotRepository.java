@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Map;
 
 @Repository
 public interface ParkingSpotRepository extends JpaRepository<ParkingSpotsEntity, Long> {
@@ -22,4 +23,7 @@ public interface ParkingSpotRepository extends JpaRepository<ParkingSpotsEntity,
 
     @Query("SELECT COUNT(s) FROM ParkingSpotsEntity s WHERE s.zone_id.id = :zoneId")
     long countByZone_idId(@Param("zoneId") Long zoneId);
+
+    @Query("SELECT s.zone_id.id, COUNT(s) FROM ParkingSpotsEntity s WHERE s.status = :status GROUP BY s.zone_id.id")
+    List<Object[]> countAvailableByZone(@Param("status") SpotStatus status);
 }

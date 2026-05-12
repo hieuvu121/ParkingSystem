@@ -11,7 +11,9 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,26 +27,32 @@ public class RecommendationService {
         List<ParkingZonesEntity> zones = zoneRepository.findAll();
         LocalDateTime in30 = LocalDateTime.now().plusMinutes(30);
 
+        Map<Long, Long> availableByZone = spotRepository.countAvailableByZone(SpotStatus.AVAILABLE)
+                .stream()
+                .collect(Collectors.toMap(
+                        row -> ((Number) row[0]).longValue(),
+                        row -> ((Number) row[1]).longValue()
+                ));
+
         if (userLat != null && userLng != null) {
             Optional<ParkingZonesEntity> nearest = zones.stream()
                     .filter(z -> z.getLat() != null && z.getLng() != null)
-                    .filter(z -> spotRepository.countByZone_idIdAndStatus(z.getId(), SpotStatus.AVAILABLE) > 0)
+                    .filter(z -> availableByZone.getOrDefault(z.getId(), 0L) > 0)
                     .min(Comparator.comparingDouble(z -> haversine(userLat, userLng, z.getLat(), z.getLng())));
             if (nearest.isPresent()) {
                 ParkingZonesEntity z = nearest.get();
-                long avail = spotRepository.countByZone_idIdAndStatus(z.getId(), SpotStatus.AVAILABLE);
+                long avail = availableByZone.getOrDefault(z.getId(), 0L);
                 double prob = predictionService.predict(z.getId(), in30).availabilityProbability();
                 return Optional.of(new RecommendationResponse(z.getId(), "Nearest available zone", avail, prob));
             }
         }
 
         Optional<ParkingZonesEntity> leastCongested = zones.stream()
-                .filter(z -> spotRepository.countByZone_idIdAndStatus(z.getId(), SpotStatus.AVAILABLE) > 0)
-                .max(Comparator.comparingLong(z ->
-                        spotRepository.countByZone_idIdAndStatus(z.getId(), SpotStatus.AVAILABLE)));
+                .filter(z -> availableByZone.getOrDefault(z.getId(), 0L) > 0)
+                .max(Comparator.comparingLong(z -> availableByZone.getOrDefault(z.getId(), 0L)));
         if (leastCongested.isPresent()) {
             ParkingZonesEntity z = leastCongested.get();
-            long avail = spotRepository.countByZone_idIdAndStatus(z.getId(), SpotStatus.AVAILABLE);
+            long avail = availableByZone.getOrDefault(z.getId(), 0L);
             double prob = predictionService.predict(z.getId(), in30).availabilityProbability();
             return Optional.of(new RecommendationResponse(z.getId(), "Least congested zone", avail, prob));
         }
@@ -53,7 +61,7 @@ public class RecommendationService {
                 .max(Comparator.comparingDouble(z ->
                         predictionService.predict(z.getId(), in30).availabilityProbability()))
                 .map(z -> {
-                    long avail = spotRepository.countByZone_idIdAndStatus(z.getId(), SpotStatus.AVAILABLE);
+                    long avail = availableByZone.getOrDefault(z.getId(), 0L);
                     double prob = predictionService.predict(z.getId(), in30).availabilityProbability();
                     return new RecommendationResponse(z.getId(), "Best predicted availability", avail, prob);
                 });
