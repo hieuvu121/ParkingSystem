@@ -1,11 +1,13 @@
 package ParkingSystem.demo.controller;
 
+import ParkingSystem.demo.dto.PageResponse;
 import ParkingSystem.demo.dto.subscription.SubscriptionRequest;
 import ParkingSystem.demo.dto.subscription.SubscriptionResponse;
 import ParkingSystem.demo.entity.UserEntity;
 import ParkingSystem.demo.service.SubscriptionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -37,7 +39,9 @@ public class SubscriptionController {
 
     @GetMapping("/admin/subscriptions")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<SubscriptionResponse>> listAll() {
-        return ResponseEntity.ok(subscriptionService.listAll());
+    public ResponseEntity<PageResponse<SubscriptionResponse>> listAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(subscriptionService.listAll(PageRequest.of(page, size)));
     }
 }

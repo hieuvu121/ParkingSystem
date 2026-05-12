@@ -1,5 +1,6 @@
 package ParkingSystem.demo.service;
 
+import ParkingSystem.demo.dto.PageResponse;
 import ParkingSystem.demo.dto.subscription.SubscriptionResponse;
 import ParkingSystem.demo.entity.PackagesEntity;
 import ParkingSystem.demo.entity.SubscriptionsEntity;
@@ -8,6 +9,7 @@ import ParkingSystem.demo.exception.ConflictException;
 import ParkingSystem.demo.exception.ResourceNotFoundException;
 import ParkingSystem.demo.repository.SubscriptionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -40,8 +42,8 @@ public class SubscriptionService {
                 .orElseThrow(() -> new ResourceNotFoundException("No active subscription for user: " + userId));
     }
 
-    public List<SubscriptionResponse> listAll() {
-        return subscriptionRepository.findAll().stream().map(this::toResponse).toList();
+    public PageResponse<SubscriptionResponse> listAll(Pageable pageable) {
+        return PageResponse.from(subscriptionRepository.findAll(pageable).map(this::toResponse));
     }
 
     private SubscriptionResponse toResponse(SubscriptionsEntity s) {

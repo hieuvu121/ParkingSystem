@@ -1,11 +1,13 @@
 package ParkingSystem.demo.service;
 
+import ParkingSystem.demo.dto.PageResponse;
 import ParkingSystem.demo.dto.user.UserProfileResponse;
 import ParkingSystem.demo.entity.UserEntity;
 import ParkingSystem.demo.enums.Role;
 import ParkingSystem.demo.exception.ResourceNotFoundException;
 import ParkingSystem.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -32,8 +34,8 @@ public class UserService {
         return toResponse(userRepository.save(user));
     }
 
-    public List<UserProfileResponse> listAll() {
-        return userRepository.findAll().stream().map(this::toResponse).toList();
+    public PageResponse<UserProfileResponse> listAll(Pageable pageable) {
+        return PageResponse.from(userRepository.findAll(pageable).map(this::toResponse));
     }
 
     public void deleteUser(Long userId) {

@@ -1,5 +1,6 @@
 package ParkingSystem.demo.controller;
 
+import ParkingSystem.demo.dto.PageResponse;
 import ParkingSystem.demo.dto.user.UpdateProfileRequest;
 import ParkingSystem.demo.dto.user.UpdateRoleRequest;
 import ParkingSystem.demo.dto.user.UserProfileResponse;
@@ -7,6 +8,7 @@ import ParkingSystem.demo.entity.UserEntity;
 import ParkingSystem.demo.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -34,8 +36,10 @@ public class UserController {
 
     @GetMapping("/api/admin/users")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<UserProfileResponse>> listUsers() {
-        return ResponseEntity.ok(userService.listAll());
+    public ResponseEntity<PageResponse<UserProfileResponse>> listUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(userService.listAll(PageRequest.of(page, size)));
     }
 
     @PatchMapping("/api/admin/users/{id}/role")

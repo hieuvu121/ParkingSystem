@@ -1,11 +1,13 @@
 package ParkingSystem.demo.controller;
 
+import ParkingSystem.demo.dto.PageResponse;
 import ParkingSystem.demo.dto.booking.BookingRequest;
 import ParkingSystem.demo.dto.booking.BookingResponse;
 import ParkingSystem.demo.entity.UserEntity;
 import ParkingSystem.demo.service.BookingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -51,7 +53,9 @@ public class BookingController {
 
     @GetMapping("/admin/bookings")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<BookingResponse>> listAll() {
-        return ResponseEntity.ok(bookingService.listAll());
+    public ResponseEntity<PageResponse<BookingResponse>> listAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(bookingService.listAll(PageRequest.of(page, size)));
     }
 }

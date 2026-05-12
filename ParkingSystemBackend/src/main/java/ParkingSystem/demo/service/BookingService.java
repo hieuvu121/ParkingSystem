@@ -1,5 +1,6 @@
 package ParkingSystem.demo.service;
 
+import ParkingSystem.demo.dto.PageResponse;
 import ParkingSystem.demo.dto.booking.BookingResponse;
 import ParkingSystem.demo.entity.BookingsEntity;
 import ParkingSystem.demo.entity.ParkingSpotsEntity;
@@ -10,6 +11,7 @@ import ParkingSystem.demo.exception.ConflictException;
 import ParkingSystem.demo.exception.ResourceNotFoundException;
 import ParkingSystem.demo.repository.BookingRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -66,8 +68,8 @@ public class BookingService {
         spotService.updateStatus(booking.getSpotId().getId(), SpotStatus.AVAILABLE);
     }
 
-    public List<BookingResponse> listAll() {
-        return bookingRepository.findAll().stream().map(this::toResponse).toList();
+    public PageResponse<BookingResponse> listAll(Pageable pageable) {
+        return PageResponse.from(bookingRepository.findAll(pageable).map(this::toResponse));
     }
 
     @Transactional
