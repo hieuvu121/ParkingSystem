@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -69,12 +70,15 @@ public class BookingService {
         return bookingRepository.findAll().stream().map(this::toResponse).toList();
     }
 
+    @Transactional
     public void expireOverdue() {
-        bookingRepository.findExpired(LocalDateTime.now()).forEach(b -> {
-            b.setStatus(BookingStatus.EXPIRED);
-            bookingRepository.save(b);
-            spotService.updateStatus(b.getSpotId().getId(), SpotStatus.AVAILABLE);
-        });
+        LocalDateTime now = LocalDateTime.now();
+        List<Long> spotIds = bookingRepository.findExpired(now).stream()
+                .map(b -> b.getSpotId().getId())
+                .collect(Collectors.toList());
+        if (spotIds.isEmpty()) return;
+        bookingRepository.bulkExpire(now);
+        spotIds.forEach(id -> spotService.updateStatus(id, SpotStatus.AVAILABLE));
     }
 
     private BookingResponse checkAndExpire(BookingsEntity b) {

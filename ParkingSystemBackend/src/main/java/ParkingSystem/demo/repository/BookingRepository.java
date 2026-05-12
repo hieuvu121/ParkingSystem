@@ -3,6 +3,7 @@ package ParkingSystem.demo.repository;
 import ParkingSystem.demo.entity.BookingsEntity;
 import ParkingSystem.demo.enums.BookingStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -33,6 +34,13 @@ public interface BookingRepository extends JpaRepository<BookingsEntity, Long> {
         WHERE b.status = 'APPROVED' AND b.endTime < :now
     """)
     List<BookingsEntity> findExpired(@Param("now") LocalDateTime now);
+
+    @Modifying
+    @Query("""
+        UPDATE BookingsEntity b SET b.status = 'EXPIRED'
+        WHERE b.status = 'APPROVED' AND b.endTime < :now
+    """)
+    int bulkExpire(@Param("now") LocalDateTime now);
 
     @Query(value = """
         SELECT EXTRACT(HOUR FROM b.start_time) AS hour, COUNT(*) AS cnt
