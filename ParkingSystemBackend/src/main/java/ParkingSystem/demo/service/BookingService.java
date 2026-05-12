@@ -11,6 +11,7 @@ import ParkingSystem.demo.exception.ResourceNotFoundException;
 import ParkingSystem.demo.repository.BookingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,6 +23,7 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final ParkingSpotService spotService;
 
+    @Transactional
     public BookingResponse create(UserEntity user, Long spotId, LocalDateTime startTime, LocalDateTime endTime) {
         ParkingSpotsEntity spot = spotService.findOrThrow(spotId);
         List<BookingsEntity> overlapping = bookingRepository.findOverlapping(spotId, startTime, endTime);
@@ -46,6 +48,7 @@ public class BookingService {
         return checkAndExpire(findOrThrow(bookingId));
     }
 
+    @Transactional
     public void cancel(Long bookingId, Long userId) {
         BookingsEntity booking = findOrThrow(bookingId);
         if (!booking.getUserId().getId().equals(userId)) {
