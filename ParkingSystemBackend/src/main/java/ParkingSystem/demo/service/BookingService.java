@@ -35,7 +35,9 @@ public class BookingService {
                 .status(BookingStatus.APPROVED)
                 .userId(user).spotId(spot).build();
         BookingsEntity saved = bookingRepository.save(booking);
-        spotService.updateStatus(spotId, SpotStatus.OCCUPIED);
+        if (!startTime.isAfter(LocalDateTime.now())) {
+            spotService.updateStatus(spotId, SpotStatus.OCCUPIED);
+        }
         return toResponse(saved);
     }
 
