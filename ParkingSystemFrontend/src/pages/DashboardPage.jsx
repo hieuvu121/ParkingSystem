@@ -43,7 +43,9 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (!selectedZoneId) return;
+    let ignore = false;
+    if (!selectedZoneId) return () => { ignore = true; };
+    setError('');
     setLoadingZone(true);
     setSpots([]);
     setPredictions([]);
@@ -56,11 +58,18 @@ export default function DashboardPage() {
       }))),
     ])
       .then(([spotData, ...predData]) => {
+        if (ignore) return;
         setSpots(spotData);
         setPredictions(predData);
       })
-      .catch((err) => setError(err.message ?? 'Failed to load zone data'))
-      .finally(() => setLoadingZone(false));
+      .catch((err) => {
+        if (ignore) return;
+        setError(err.message ?? 'Failed to load zone data');
+      })
+      .finally(() => {
+        if (!ignore) setLoadingZone(false);
+      });
+    return () => { ignore = true; };
   }, [selectedZoneId]);
 
   const zoneSummary = dashboard?.byZone?.find((z) => z.zoneId === selectedZoneId);
