@@ -28,7 +28,7 @@ public class ParkingSpotsEntity {
     private String type;
 
     @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
+    @Enumerated(EnumType.ORDINAL)
     private SpotStatus status;
 
     @OneToMany(mappedBy = "spotId")

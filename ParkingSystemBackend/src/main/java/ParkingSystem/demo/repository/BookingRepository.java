@@ -21,7 +21,7 @@ public interface BookingRepository extends JpaRepository<BookingsEntity, Long> {
     @Query("""
         SELECT b FROM BookingsEntity b
         WHERE b.spotId.id = :spotId
-          AND b.status IN ('PENDING', 'APPROVED')
+          AND b.status IN (ParkingSystem.demo.enums.BookingStatus.PENDING, ParkingSystem.demo.enums.BookingStatus.APPROVED)
           AND b.startTime < :endTime
           AND b.endTime > :startTime
     """)
@@ -31,21 +31,22 @@ public interface BookingRepository extends JpaRepository<BookingsEntity, Long> {
 
     @Query("""
         SELECT b FROM BookingsEntity b
-        WHERE b.status = 'APPROVED' AND b.endTime < :now
+        WHERE b.status = ParkingSystem.demo.enums.BookingStatus.APPROVED AND b.endTime < :now
     """)
     List<BookingsEntity> findExpired(@Param("now") LocalDateTime now);
 
     @Modifying
     @Query("""
-        UPDATE BookingsEntity b SET b.status = 'EXPIRED'
-        WHERE b.status = 'APPROVED' AND b.endTime < :now
+        UPDATE BookingsEntity b SET b.status = ParkingSystem.demo.enums.BookingStatus.EXPIRED
+        WHERE b.status = ParkingSystem.demo.enums.BookingStatus.APPROVED AND b.endTime < :now
     """)
     int bulkExpire(@Param("now") LocalDateTime now);
 
+    // Native queries use ordinal integers: PENDING=0, APPROVED=1, EXPIRED=2, CANCELLED=3
     @Query(value = """
         SELECT EXTRACT(HOUR FROM b.start_time) AS hour, COUNT(*) AS cnt
         FROM bookings b
-        WHERE b.status IN ('APPROVED', 'EXPIRED')
+        WHERE b.status IN (1, 2)
         GROUP BY EXTRACT(HOUR FROM b.start_time)
         ORDER BY hour
     """, nativeQuery = true)
@@ -54,8 +55,8 @@ public interface BookingRepository extends JpaRepository<BookingsEntity, Long> {
     @Query(value = """
         SELECT ps.zone_id, COUNT(*) AS cnt
         FROM bookings b
-        JOIN "parkingSpots" ps ON b.spot_id = ps.id
-        WHERE b.status IN ('APPROVED', 'EXPIRED')
+        JOIN parking_spots ps ON b.spot_id = ps.id
+        WHERE b.status IN (1, 2)
           AND b.start_time >= :from AND b.end_time <= :to
         GROUP BY ps.zone_id
     """, nativeQuery = true)
@@ -63,16 +64,16 @@ public interface BookingRepository extends JpaRepository<BookingsEntity, Long> {
 
     @Query(value = """
         SELECT COUNT(*) FROM bookings b
-        JOIN "parkingSpots" ps ON b.spot_id = ps.id
-        WHERE ps.zone_id = :zoneId AND b.status IN ('APPROVED', 'EXPIRED')
+        JOIN parking_spots ps ON b.spot_id = ps.id
+        WHERE ps.zone_id = :zoneId AND b.status IN (1, 2)
     """, nativeQuery = true)
     long countByZoneId(@Param("zoneId") Long zoneId);
 
     @Query(value = """
         SELECT COUNT(*) FROM bookings b
-        JOIN "parkingSpots" ps ON b.spot_id = ps.id
+        JOIN parking_spots ps ON b.spot_id = ps.id
         WHERE ps.zone_id = :zoneId
-          AND b.status IN ('APPROVED', 'EXPIRED')
+          AND b.status IN (1, 2)
           AND EXTRACT(DOW FROM b.start_time) = :pgDow
           AND EXTRACT(HOUR FROM b.start_time) = :hour
     """, nativeQuery = true)
