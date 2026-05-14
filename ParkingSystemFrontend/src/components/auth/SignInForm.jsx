@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import AvatarPlaceholder from '../ui/AvatarPlaceholder';
 import InputField from '../ui/InputField';
 import PillButton from '../ui/PillButton';
@@ -14,12 +14,15 @@ export default function SignInForm() {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [status, setStatus] = useState('idle'); // idle | loading | success | error
+  const [status, setStatus] = useState('idle');
   const [message, setMessage] = useState('');
+  const submittingRef = useRef(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
     if (!email || !password) return;
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setStatus('loading');
     setMessage('');
     try {
@@ -29,6 +32,8 @@ export default function SignInForm() {
     } catch (err) {
       setStatus('error');
       setMessage(mapSignInError(err.status));
+    } finally {
+      submittingRef.current = false;
     }
   }
 
@@ -47,11 +52,13 @@ export default function SignInForm() {
         value={password}
         onChange={(e) => setPassword(e.target.value)}
       />
-      <PillButton onClick={handleSubmit} disabled={status === 'loading'}>
+      <PillButton type="submit" disabled={status === 'loading' || status === 'success'}>
         {status === 'loading' ? 'Loading...' : 'Continue'}
       </PillButton>
       {message && (
-        <p className={`text-center text-sm font-medium ${status === 'success' ? 'text-green-600' : 'text-red-500'}`}>
+        <p className={`text-center text-sm font-medium ${
+          status === 'success' ? 'text-green-600' : status === 'error' ? 'text-red-500' : ''
+        }`}>
           {message}
         </p>
       )}
