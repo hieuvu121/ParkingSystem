@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Client } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
 import { getZones, getDashboard, getSpots, getPrediction } from '../api/dashboard';
 import ZoneTabBar from '../components/dashboard/ZoneTabBar';
 import SpotGrid from '../components/dashboard/SpotGrid';
@@ -30,6 +32,39 @@ export default function DashboardPage() {
   const [loadingInit, setLoadingInit] = useState(true);
   const [loadingZone, setLoadingZone] = useState(false);
   const [error, setError] = useState('');
+  const [wsConnected, setWsConnected] = useState(false);
+  const selectedZoneIdRef = useRef(selectedZoneId);
+
+  // keep ref in sync so WebSocket handler always reads the current zone
+  useEffect(() => { selectedZoneIdRef.current = selectedZoneId; }, [selectedZoneId]);
+
+  // WebSocket — connect once on mount, stay connected across zone switches
+  useEffect(() => {
+    const client = new Client({
+      webSocketFactory: () => new SockJS('/ws'),
+      reconnectDelay: 5000,
+      onConnect: () => {
+        setWsConnected(true);
+
+        client.subscribe('/topic/spots', (msg) => {
+          const update = JSON.parse(msg.body);
+          if (update.zoneId === selectedZoneIdRef.current) {
+            setSpots((prev) =>
+              prev.map((s) => s.id === update.spotId ? { ...s, status: update.status } : s)
+            );
+          }
+        });
+
+        client.subscribe('/topic/dashboard', (msg) => {
+          setDashboard(JSON.parse(msg.body));
+        });
+      },
+      onDisconnect: () => setWsConnected(false),
+      onStompError: () => setWsConnected(false),
+    });
+    client.activate();
+    return () => client.deactivate();
+  }, []);
 
   useEffect(() => {
     Promise.all([getZones(), getDashboard()])
@@ -103,6 +138,12 @@ export default function DashboardPage() {
       <header className="px-4 py-4 flex items-center gap-3 border-b border-[#2C2C2E]">
         <span className="text-[#F5D26B] text-xl font-bold">🅿</span>
         <h1 className="text-white font-semibold text-lg">Parking System</h1>
+        <span className="ml-auto flex items-center gap-1.5 text-xs text-[#A1A1AA]">
+          <span
+            className={`w-2 h-2 rounded-full ${wsConnected ? 'bg-[#4ADE80] animate-pulse' : 'bg-[#6B7280]'}`}
+          />
+          {wsConnected ? 'Live' : 'Connecting…'}
+        </span>
       </header>
 
       {/* Zone tab bar */}
