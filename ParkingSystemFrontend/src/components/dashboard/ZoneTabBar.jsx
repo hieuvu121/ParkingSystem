@@ -9,12 +9,13 @@ function dotColor(available, total) {
 export default function ZoneTabBar({ zones, dashboard, selectedZoneId, onSelect }) {
   return (
     <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide px-4">
-      {zones.map((zone) => {
+      {(zones ?? []).map((zone) => {
         const summary = dashboard?.byZone?.find((z) => z.zoneId === zone.id);
         const color = summary ? dotColor(summary.available, summary.total) : '#6B7280';
         const active = zone.id === selectedZoneId;
         return (
           <button
+            type="button"
             key={zone.id}
             onClick={() => onSelect(zone.id)}
             className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition ${
