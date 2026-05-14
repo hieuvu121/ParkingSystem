@@ -1,10 +1,14 @@
 import { apiFetch } from './client';
 
+async function parseError(res, fallback) {
+  const data = await res.json().catch(() => ({}));
+  throw { status: res.status, message: data.message ?? fallback };
+}
+
 export async function getMe() {
   const res = await apiFetch('/api/users/me');
-  const data = await res.json();
-  if (!res.ok) throw { status: res.status, message: data.message ?? 'Failed to load profile' };
-  return data;
+  if (!res.ok) await parseError(res, 'Failed to load profile');
+  return res.json();
 }
 
 export async function updateMe(fullName) {
@@ -12,16 +16,15 @@ export async function updateMe(fullName) {
     method: 'PUT',
     body: JSON.stringify({ fullName }),
   });
-  const data = await res.json();
-  if (!res.ok) throw { status: res.status, message: data.message ?? 'Failed to update profile' };
-  return data;
+  if (!res.ok) await parseError(res, 'Failed to update profile');
+  return res.json();
 }
 
 export async function listUsers(page = 0, size = 20) {
-  const res = await apiFetch(`/api/admin/users?page=${page}&size=${size}`);
-  const data = await res.json();
-  if (!res.ok) throw { status: res.status, message: data.message ?? 'Failed to load users' };
-  return data;
+  const params = new URLSearchParams({ page, size });
+  const res = await apiFetch(`/api/admin/users?${params}`);
+  if (!res.ok) await parseError(res, 'Failed to load users');
+  return res.json();
 }
 
 export async function changeRole(id, role) {
@@ -29,15 +32,11 @@ export async function changeRole(id, role) {
     method: 'PATCH',
     body: JSON.stringify({ role }),
   });
-  const data = await res.json();
-  if (!res.ok) throw { status: res.status, message: data.message ?? 'Failed to change role' };
-  return data;
+  if (!res.ok) await parseError(res, 'Failed to change role');
+  return res.json();
 }
 
 export async function deleteUser(id) {
   const res = await apiFetch(`/api/admin/users/${id}`, { method: 'DELETE' });
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw { status: res.status, message: data.message ?? 'Failed to delete user' };
-  }
+  if (!res.ok) await parseError(res, 'Failed to delete user');
 }
