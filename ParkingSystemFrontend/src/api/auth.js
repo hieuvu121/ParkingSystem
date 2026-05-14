@@ -7,6 +7,7 @@ export async function login(email, password) {
   });
   const data = await res.json();
   if (!res.ok) throw { status: res.status, message: data.message ?? 'Unknown error' };
+  if (!data.token) throw { status: 200, message: 'Server did not return a token' };
   return data; // { token }
 }
 
