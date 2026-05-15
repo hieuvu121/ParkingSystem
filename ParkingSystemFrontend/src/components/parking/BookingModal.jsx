@@ -64,8 +64,11 @@ export default function BookingModal({ spot, onClose, onBooked }) {
       });
       onBooked();
     } catch (e) {
+      const msg = e.message ?? '';
       setError(
-        e.status === 409
+        msg.includes('1 active booking')
+          ? 'You already have an active booking. Cancel it before booking another.'
+          : e.status === 409
           ? 'Spot just got taken — please pick another.'
           : 'Something went wrong. Try again.'
       );

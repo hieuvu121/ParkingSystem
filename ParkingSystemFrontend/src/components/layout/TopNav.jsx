@@ -3,9 +3,8 @@ export default function TopNav({ page, setPage, user, wsConnected }) {
 
   const navItems = isAdmin
     ? [
-        { key: 'dashboard',       label: 'Dashboard' },
-        { key: 'admin-users',     label: 'Users' },
-        { key: 'admin-analytics', label: 'Analytics' },
+        { key: 'dashboard',   label: 'Dashboard' },
+        { key: 'admin-users', label: 'Users' },
       ]
     : [
         { key: 'parking',  label: 'Parking' },
