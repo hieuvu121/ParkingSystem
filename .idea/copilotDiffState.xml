@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CopilotDiffPersistence">
+    <option name="pendingDiffs">
+      <map>
+        <entry key="$PROJECT_DIR$/ParkingSystemBackend/src/main/java/ParkingSystem/demo/config/WebSocketConfig.java">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/ParkingSystemBackend/src/main/java/ParkingSystem/demo/config/WebSocketConfig.java" />
+              <option name="originalContent" value="package ParkingSystem.demo.config;&#10;&#10;import org.springframework.context.annotation.Configuration;&#10;import org.springframework.messaging.simp.config.MessageBrokerRegistry;&#10;import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;&#10;import org.springframework.web.socket.config.annotation.StompEndpointRegistry;&#10;import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;&#10;&#10;@Configuration&#10;@EnableWebSocketMessageBroker&#10;public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {&#10;&#10;    @Override&#10;    public void configureMessageBroker(MessageBrokerRegistry registry) {&#10;        registry.enableSimpleBroker(&quot;/topic&quot;);&#10;        registry.setApplicationDestinationPrefixes(&quot;/app&quot;);&#10;    }&#10;&#10;    @Override&#10;    public void registerStompEndpoints(StompEndpointRegistry registry) {&#10;        registry.addEndpoint(&quot;/ws&quot;).withSockJS();&#10;    }&#10;}&#10;" />
+              <option name="updatedContent" value="package ParkingSystem.demo.config;&#10;&#10;import org.springframework.beans.factory.annotation.Value;&#10;import org.springframework.context.annotation.Configuration;&#10;import org.springframework.messaging.simp.config.MessageBrokerRegistry;&#10;import org.springframework.util.StringUtils;&#10;import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;&#10;import org.springframework.web.socket.config.annotation.StompEndpointRegistry;&#10;import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;&#10;&#10;@Configuration&#10;@EnableWebSocketMessageBroker&#10;public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {&#10;&#10;    @Value(&quot;${app.websocket.allowed-origins:http://localhost:5175}&quot;)&#10;    private String allowedOrigins;&#10;&#10;    @Override&#10;    public void configureMessageBroker(MessageBrokerRegistry registry) {&#10;        registry.enableSimpleBroker(&quot;/topic&quot;);&#10;        registry.setApplicationDestinationPrefixes(&quot;/app&quot;);&#10;    }&#10;&#10;    @Override&#10;    public void registerStompEndpoints(StompEndpointRegistry registry) {&#10;        registry.addEndpoint(&quot;/ws&quot;)&#10;                .setAllowedOriginPatterns(StringUtils.commaDelimitedListToStringArray(allowedOrigins))&#10;                .withSockJS();&#10;    }&#10;}" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/ParkingSystemBackend/src/main/resources/application.properties">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/ParkingSystemBackend/src/main/resources/application.properties" />
+              <option name="originalContent" value="spring.application.name=app&#10;spring.datasource.url=jdbc:postgresql://localhost:5432/parkingSystem&#10;spring.datasource.username=${PGDB_USERNAME}&#10;spring.datasource.password=${PGDB_PASSWORD}&#10;&#10;spring.jpa.hibernate.ddl-auto=update&#10;spring.jpa.show-sql=true&#10;spring.jpa.properties.hibernate.format_sql=true&#10;spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect&#10;&#10;# Mail&#10;spring.mail.host=${MAIL_HOST}&#10;spring.mail.port=587&#10;spring.mail.username=${MAIL_USERNAME}&#10;spring.mail.password=${MAIL_PASSWORD}&#10;spring.mail.properties.mail.smtp.auth=true&#10;spring.mail.properties.mail.smtp.starttls.enable=true&#10;&#10;# JWT&#10;app.jwt.secret=${JWT_SECRET}&#10;app.jwt.expiration=86400000&#10;&#10;# App&#10;app.websocket.allowed-origins=http://localhost:5173,http://127.0.0.1:5173&#10;" />
+              <option name="updatedContent" value="spring.application.name=app&#10;spring.datasource.url=jdbc:postgresql://localhost:5432/parkingSystem&#10;spring.datasource.username=${PGDB_USERNAME}&#10;spring.datasource.password=${PGDB_PASSWORD}&#10;&#10;spring.jpa.hibernate.ddl-auto=update&#10;spring.jpa.show-sql=true&#10;spring.jpa.properties.hibernate.format_sql=true&#10;spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect&#10;&#10;# Mail&#10;spring.mail.host=${MAIL_HOST}&#10;spring.mail.port=587&#10;spring.mail.username=${MAIL_USERNAME}&#10;spring.mail.password=${MAIL_PASSWORD}&#10;spring.mail.properties.mail.smtp.auth=true&#10;spring.mail.properties.mail.smtp.starttls.enable=true&#10;&#10;# JWT&#10;app.jwt.secret=${JWT_SECRET}&#10;app.jwt.expiration=86400000&#10;&#10;# App&#10;app.base-url=http://localhost:8080&#10;app.websocket.allowed-origins=http://localhost:5175,http://127.0.0.1:5175" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/ParkingSystemBackend/src/main/resources/db/manual/2026-05-15-booking-status-cancelled.sql">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/ParkingSystemBackend/src/main/resources/db/manual/2026-05-15-booking-status-cancelled.sql" />
+              <option name="updatedContent" value="-- Update bookings status constraint to allow CANCELLED.&#10;-- This project uses EnumType.ORDINAL, so status is stored as an integer (0..n).&#10;-- Run with: psql -d parkingSystem -f 2026-05-15-booking-status-cancelled.sql&#10;&#10;-- If your column is integer (ORDINAL), use this block:&#10;ALTER TABLE bookings DROP CONSTRAINT IF EXISTS bookings_status_check;&#10;ALTER TABLE bookings&#10;  ADD CONSTRAINT bookings_status_check&#10;  CHECK (status &gt;= 0 AND status &lt;= 3);&#10;&#10;-- If your column is a Postgres enum, comment out the block above and use:&#10;-- ALTER TYPE booking_status ADD VALUE IF NOT EXISTS 'CANCELLED';&#10;-- ALTER TABLE bookings DROP CONSTRAINT IF EXISTS bookings_status_check;&#10;-- ALTER TABLE bookings&#10;--   ADD CONSTRAINT bookings_status_check&#10;--   CHECK (status IN ('PENDING', 'APPROVED', 'EXPIRED', 'CANCELLED'));&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+        <entry key="$PROJECT_DIR$/ParkingSystemFrontend/vite.config.js">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/ParkingSystemFrontend/vite.config.js" />
+              <option name="originalContent" value="import { defineConfig } from &quot;vite&quot;;&#10;import react from &quot;@vitejs/plugin-react&quot;;&#10;&#10;export default defineConfig({&#10;  plugins: [react()],&#10;  define: {&#10;    global: {},&#10;  },&#10;  server: {&#10;    proxy: {&#10;      '/api': {&#10;        target: 'http://localhost:8080',&#10;        changeOrigin: true,&#10;      },&#10;      '/ws': {&#10;        target: 'http://localhost:8080',&#10;        changeOrigin: true,&#10;        ws: true,&#10;      },&#10;    },&#10;  },&#10;});&#10;&#10;" />
+              <option name="updatedContent" value="import { defineConfig } from &quot;vite&quot;;&#10;import react from &quot;@vitejs/plugin-react&quot;;&#10;&#10;export default defineConfig({&#10;  plugins: [react()],&#10;  define: {&#10;    global: &quot;window&quot;,&#10;  },&#10;  server: {&#10;    port: 5175,&#10;    proxy: {&#10;      &quot;/api&quot;: {&#10;        target: &quot;http://localhost:8080&quot;,&#10;        changeOrigin: true,&#10;      },&#10;      &quot;/ws&quot;: {&#10;        target: &quot;http://localhost:8080&quot;,&#10;        changeOrigin: true,&#10;        ws: true,&#10;      },&#10;    },&#10;  },&#10;});" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>

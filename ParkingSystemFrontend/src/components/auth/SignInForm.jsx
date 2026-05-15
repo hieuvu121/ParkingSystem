@@ -64,9 +64,9 @@ export default function SignInForm() {
       )}
       <hr className="border-[#3A3A3A]" />
       <div className="text-center">
-        <a href="#" className="text-sm text-gray-400 underline">
+        <button type="button" className="text-sm text-gray-400 underline cursor-not-allowed opacity-60" disabled>
           Forgot Password?
-        </a>
+        </button>
       </div>
     </form>
   );

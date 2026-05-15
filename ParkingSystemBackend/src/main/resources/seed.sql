@@ -1,50 +1,66 @@
 -- ============================================================
 -- Seed: Parking Zones & Spots
 -- Usage: psql -U <user> -d parkingSystem -f seed.sql
--- Safe to re-run: clears spots and zones before inserting.
+-- Safe to re-run: clears bookings, spots, zones before inserting.
 --
--- Creates 4 zones × 50 spots (5 rows × 10 cols) = 200 spots
+-- Zone layout:
+--   Level 1 INDOOR   → 4 cols × 5 rows = 20 spots
+--   Level 1 OUTDOOR  → 6 cols × 5 rows = 30 spots
+--   Level 2 INDOOR   → 4 cols × 5 rows = 20 spots
+--   Level 2 OUTDOOR  → 6 cols × 5 rows = 30 spots
+--   Total: 100 spots
+--
 -- Spot status ordinals: 0 = OCCUPIED, 1 = AVAILABLE
+-- Spot types cycle: STANDARD → COMPACT → DISABLED → EV
 -- ============================================================
 
--- ── Cleanup (order matters due to FK: spots → zones) ─────────
+-- ── Cleanup (FK order: bookings → spots → zones) ─────────────
+DELETE FROM bookings;
 DELETE FROM parking_spots;
 DELETE FROM parking_zones;
 
 -- ── Zones ────────────────────────────────────────────────────
 INSERT INTO parking_zones (level, type, lat, lng) VALUES
-    (1, 'INDOOR',   10.77690, 106.70090),   -- Zone A  (ground floor, covered)
-    (2, 'INDOOR',   10.77730, 106.70150),   -- Zone B  (2nd floor, covered)
-    (1, 'OUTDOOR',  10.77610, 106.69980),   -- Zone C  (ground floor, open air)
-    (2, 'OUTDOOR',  10.77800, 106.70250);   -- Zone D  (rooftop, open air)
+    (1, 'INDOOR',  10.77690, 106.70090),   -- Level 1 Indoor  (ground floor, covered)
+    (1, 'OUTDOOR', 10.77610, 106.69980),   -- Level 1 Outdoor (ground floor, open air)
+    (2, 'INDOOR',  10.77730, 106.70150),   -- Level 2 Indoor  (2nd floor, covered)
+    (2, 'OUTDOOR', 10.77800, 106.70250);   -- Level 2 Outdoor (rooftop, open air)
 
 -- ── Spots ────────────────────────────────────────────────────
--- 5 rows × 10 cols per zone  →  50 spots / zone  →  200 total
--- Types cycle every 4 spots: STANDARD → COMPACT → DISABLED → EV
--- Status: ~70 % AVAILABLE (1), ~30 % OCCUPIED (0)
+-- Grid width per zone type:
+--   INDOOR  → 4 cols  (4 × 5 = 20 spots)
+--   OUTDOOR → 6 cols  (6 × 5 = 30 spots)
+-- Status: ~70% AVAILABLE (1), ~30% OCCUPIED (0)
 DO $$
 DECLARE
-    z_id        BIGINT;
-    r           INT;
-    c           INT;
-    spot_types  TEXT[] := ARRAY['STANDARD', 'COMPACT', 'DISABLED', 'EV'];
-    spot_type   TEXT;
-    spot_status INT;
+    z          RECORD;
+    cols       INT;
+    r          INT;
+    c          INT;
+    spot_types TEXT[] := ARRAY['STANDARD', 'COMPACT', 'DISABLED', 'EV'];
 BEGIN
-    FOR z_id IN SELECT id FROM parking_zones ORDER BY id LOOP
-        FOR r IN 1..5 LOOP
-            FOR c IN 1..10 LOOP
-                spot_type   := spot_types[1 + ((r * 10 + c - 1) % 4)];
-                spot_status := CASE WHEN random() < 0.7 THEN 1 ELSE 0 END;
+    FOR z IN SELECT id, type FROM parking_zones ORDER BY id LOOP
+        cols := CASE z.type
+            WHEN 'INDOOR'  THEN 4
+            WHEN 'OUTDOOR' THEN 6
+        END;
 
+        FOR r IN 1..5 LOOP
+            FOR c IN 1..cols LOOP
                 INSERT INTO parking_spots (row, col, type, status, zone_id)
-                VALUES (r, c, spot_type, spot_status, z_id);
+                VALUES (
+                    r,
+                    c,
+                    spot_types[1 + ((r * cols + c - 1) % 4)],
+                    CASE WHEN random() < 0.7 THEN 1 ELSE 0 END,
+                    z.id
+                );
             END LOOP;
         END LOOP;
     END LOOP;
 END $$;
 
--- ── Verification summary ──────────────────────────────────────
+-- ── Zone verification ─────────────────────────────────────────
 SELECT
     z.id                                            AS zone_id,
     z.level,
@@ -64,8 +80,6 @@ ORDER BY z.id;
 -- Booking durations: 1–8 hours, spread across the past 6 months.
 -- ============================================================
 
-DELETE FROM bookings WHERE created_by = 5;
-
 DO $$
 DECLARE
     i            INT;
@@ -74,9 +88,15 @@ DECLARE
     start_ts     TIMESTAMP;
     end_ts       TIMESTAMP;
     bstatus      INT;
-    -- weighted pool: PENDING×1  APPROVED×3  EXPIRED×2  (no CANCELLED — excluded by DB constraint)
+    -- weighted pool: PENDING×1  APPROVED×3  EXPIRED×2
     weights      INT[] := ARRAY[0, 1, 1, 1, 2, 2];
 BEGIN
+    -- only seed bookings if user 5 exists
+    IF NOT EXISTS (SELECT 1 FROM users WHERE id = 5) THEN
+        RAISE NOTICE 'user_id=5 not found — skipping bookings seed';
+        RETURN;
+    END IF;
+
     SELECT ARRAY(SELECT id FROM parking_spots ORDER BY id) INTO spot_ids;
 
     FOR i IN 1..50 LOOP
@@ -98,8 +118,8 @@ SELECT
         WHEN 1 THEN 'APPROVED'
         WHEN 2 THEN 'EXPIRED'
         WHEN 3 THEN 'CANCELLED'
-    END                 AS status_name,
-    COUNT(*)            AS count
+    END     AS status_name,
+    COUNT(*) AS count
 FROM bookings
 WHERE created_by = 5
 GROUP BY status
