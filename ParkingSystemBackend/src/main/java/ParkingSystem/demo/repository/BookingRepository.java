@@ -2,6 +2,7 @@ package ParkingSystem.demo.repository;
 
 import ParkingSystem.demo.entity.BookingsEntity;
 import ParkingSystem.demo.enums.BookingStatus;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -87,6 +88,24 @@ public interface BookingRepository extends JpaRepository<BookingsEntity, Long> {
                                   @Param("to") LocalDateTime to);
 
     long countByUserId_IdAndStatus(Long userId, BookingStatus status);
+
+    @Query(value = """
+        SELECT b FROM BookingsEntity b
+        WHERE (:status IS NULL OR b.status = :status)
+          AND b.startTime >= :from
+          AND b.startTime <= :to
+        ORDER BY b.startTime DESC
+        """,
+        countQuery = """
+        SELECT COUNT(b) FROM BookingsEntity b
+        WHERE (:status IS NULL OR b.status = :status)
+          AND b.startTime >= :from
+          AND b.startTime <= :to
+        """)
+    Page<BookingsEntity> findAdminBookings(@Param("status") BookingStatus status,
+                                           @Param("from") LocalDateTime from,
+                                           @Param("to") LocalDateTime to,
+                                           Pageable pageable);
 
     @Query("""
         SELECT b FROM BookingsEntity b
