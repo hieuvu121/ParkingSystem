@@ -91,8 +91,11 @@ public class BookingService {
         spotService.updateStatus(booking.getSpotId().getId(), SpotStatus.AVAILABLE);
     }
 
-    public PageResponse<BookingResponse> listAll(Pageable pageable) {
-        return PageResponse.from(bookingRepository.findAll(pageable).map(this::toResponse));
+    public PageResponse<BookingResponse> listAll(String statusStr, LocalDateTime from, LocalDateTime to, Pageable pageable) {
+        BookingStatus status = (statusStr != null && !statusStr.isBlank() && !statusStr.equalsIgnoreCase("ALL"))
+                ? BookingStatus.valueOf(statusStr)
+                : null;
+        return PageResponse.from(bookingRepository.findAdminBookings(status, from, to, pageable).map(this::toResponse));
     }
 
     @Transactional
