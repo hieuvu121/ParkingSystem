@@ -11,4 +11,5 @@ public class BookingRequest {
     @NotNull private Long spotId;
     @NotNull private LocalDateTime startTime;
     @NotNull @Future private LocalDateTime endTime;
+    @NotNull private String paymentType;
 }
