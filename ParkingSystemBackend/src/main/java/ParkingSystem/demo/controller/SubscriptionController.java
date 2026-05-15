@@ -44,4 +44,32 @@ public class SubscriptionController {
             @RequestParam(defaultValue = "20") int size) {
         return ResponseEntity.ok(subscriptionService.listAll(PageRequest.of(page, size)));
     }
+
+    @GetMapping("/admin/users/{userId}/subscription")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<SubscriptionResponse> getUserSubscription(@PathVariable Long userId) {
+        return ResponseEntity.ok(subscriptionService.adminGetUserSubscription(userId));
+    }
+
+    @PostMapping("/admin/users/{userId}/subscription")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<SubscriptionResponse> addUserSubscription(@PathVariable Long userId,
+                                                                     @Valid @RequestBody SubscriptionRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(subscriptionService.adminAddUserSubscription(userId, request.getPackageId()));
+    }
+
+    @PutMapping("/admin/users/{userId}/subscription")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<SubscriptionResponse> changeUserSubscription(@PathVariable Long userId,
+                                                                        @Valid @RequestBody SubscriptionRequest request) {
+        return ResponseEntity.ok(subscriptionService.adminChangeUserSubscription(userId, request.getPackageId()));
+    }
+
+    @DeleteMapping("/admin/users/{userId}/subscription")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> removeUserSubscription(@PathVariable Long userId) {
+        subscriptionService.adminRemoveUserSubscription(userId);
+        return ResponseEntity.noContent().build();
+    }
 }

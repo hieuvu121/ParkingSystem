@@ -26,8 +26,8 @@ public class SubscriptionsEntity {
 
     @ManyToOne
     @JoinColumn(
-            name="packageName",
-            referencedColumnName="name",
+            name="packageId",
+            referencedColumnName="id",
             nullable = false
     )
     private PackagesEntity packageName;
