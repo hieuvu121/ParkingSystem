@@ -9,7 +9,7 @@ export default function InputField({ label, value, onChange, type = 'text', plac
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className="w-full rounded-full border-2 border-[#3A3A3A] bg-transparent px-5 py-3 text-base outline-none"
+        className="w-full rounded-full border-2 border-[#3A3A3A] bg-transparent px-5 py-3 text-base text-black placeholder:text-gray-400 outline-none"
       />
     </div>
   );
