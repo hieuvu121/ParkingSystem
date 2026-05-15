@@ -79,7 +79,7 @@ function ZoneModal({ zone, onSave, onClose }) {
   );
 }
 
-function SpotModal({ zoneId, spot, onSave, onClose }) {
+function SpotModal({ zoneId, spot, existingSpots, onSave, onClose }) {
   const [row, setRow] = useState(spot?.row ?? '');
   const [col, setCol] = useState(spot?.col ?? '');
   const [type, setType] = useState(spot?.type ?? SPOT_TYPES[0]);
@@ -88,11 +88,20 @@ function SpotModal({ zoneId, spot, onSave, onClose }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    const r = Number(row);
+    const c = Number(col);
+    const duplicate = existingSpots.some(
+      (s) => Number(s.row) === r && Number(s.col) === c && s.id !== spot?.id
+    );
+    if (duplicate) {
+      setError(`Spot R${r}–C${c} already exists in this zone.`);
+      return;
+    }
     setSaving(true);
     try {
-      const data = { row: Number(row), col: Number(col), type };
-      spot ? await updateSpot(spot.id, data) : await createSpot(zoneId, data);
-      onSave();
+      const data = { row: r, col: c, type };
+      const saved = spot ? await updateSpot(spot.id, data) : await createSpot(zoneId, data);
+      onSave(saved);
     } catch (err) {
       setError(err.message ?? 'Failed to save');
     } finally {
@@ -344,7 +353,15 @@ export default function AdminZonesPage() {
         <SpotModal
           zoneId={selectedZone.id}
           spot={spotModal === 'create' ? null : spotModal}
-          onSave={() => { setSpotModal(null); loadSpots(selectedZone.id); }}
+          existingSpots={spots}
+          onSave={(saved) => {
+            setSpotModal(null);
+            if (spotModal === 'create') {
+              setSpots((prev) => [...prev, saved]);
+            } else {
+              setSpots((prev) => prev.map((s) => s.id === saved.id ? saved : s));
+            }
+          }}
           onClose={() => setSpotModal(null)}
         />
       )}
