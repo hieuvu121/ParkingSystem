@@ -43,27 +43,27 @@ export default function AdminAnalyticsPage() {
   const [occupancy, setOccupancy] = useState([]);
   const [from, setFrom] = useState(monthAgoStr());
   const [to, setTo] = useState(todayStr());
-  const [loading, setLoading] = useState(true);
-  const [occLoading, setOccLoading] = useState(false);
+  const [peakLoading, setPeakLoading] = useState(true);
+  const [rangeLoading, setRangeLoading] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    setLoading(true);
-    Promise.all([getPeakHours(), getUtilization()])
-      .then(([ph, ut]) => {
-        setPeakHours(ph);
-        setUtilization(ut);
-      })
-      .catch((e) => setError(e.message ?? 'Failed to load analytics'))
-      .finally(() => setLoading(false));
+    setPeakLoading(true);
+    getPeakHours()
+      .then(setPeakHours)
+      .catch((e) => setError(e.message ?? 'Failed to load peak hours'))
+      .finally(() => setPeakLoading(false));
   }, []);
 
   useEffect(() => {
-    setOccLoading(true);
-    getOccupancy(from, to)
-      .then(setOccupancy)
-      .catch(() => setOccupancy([]))
-      .finally(() => setOccLoading(false));
+    setRangeLoading(true);
+    Promise.all([getUtilization(from, to), getOccupancy(from, to)])
+      .then(([ut, occ]) => {
+        setUtilization(ut);
+        setOccupancy(occ);
+      })
+      .catch((e) => setError(e.message ?? 'Failed to load analytics'))
+      .finally(() => setRangeLoading(false));
   }, [from, to]);
 
   const peakData = {
@@ -96,29 +96,59 @@ export default function AdminAnalyticsPage() {
   return (
     <div className="min-h-screen bg-[#111111] text-white px-4 py-6">
       <div className="max-w-6xl mx-auto space-y-8">
-        <h2 className="text-xl font-bold">Analytics</h2>
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <h2 className="text-xl font-bold">Analytics</h2>
+          <div className="flex gap-3 items-end">
+            <div>
+              <label className="text-[#A1A1AA] text-xs block mb-1">From</label>
+              <input
+                type="date"
+                value={from}
+                max={to}
+                onChange={(e) => setFrom(e.target.value)}
+                className="bg-[#2C2C2E] text-white text-sm rounded-xl px-3 py-1.5 outline-none border border-[#3C3C3E] focus:border-[#F5D26B]"
+              />
+            </div>
+            <div>
+              <label className="text-[#A1A1AA] text-xs block mb-1">To</label>
+              <input
+                type="date"
+                value={to}
+                min={from}
+                onChange={(e) => setTo(e.target.value)}
+                className="bg-[#2C2C2E] text-white text-sm rounded-xl px-3 py-1.5 outline-none border border-[#3C3C3E] focus:border-[#F5D26B]"
+              />
+            </div>
+          </div>
+        </div>
 
         {error && <p className="text-red-400 text-sm">{error}</p>}
 
-        {loading ? (
+        {/* Peak hours — all time, no date range */}
+        <div className="bg-[#1C1C1E] rounded-2xl p-5">
+          <h3 className="font-semibold mb-1">Peak Hours</h3>
+          <p className="text-[#A1A1AA] text-xs mb-4">Average relative booking frequency by hour of day (all time)</p>
+          {peakLoading ? (
+            <div className="flex items-center justify-center h-32 text-[#A1A1AA]">Loading…</div>
+          ) : peakHours.length === 0 ? (
+            <p className="text-[#A1A1AA] text-sm text-center py-8">No data yet</p>
+          ) : (
+            <Bar data={peakData} options={CHART_OPTIONS} />
+          )}
+        </div>
+
+        {rangeLoading ? (
           <div className="flex items-center justify-center h-48 text-[#A1A1AA]">Loading…</div>
         ) : (
           <>
-            <div className="bg-[#1C1C1E] rounded-2xl p-5">
-              <h3 className="font-semibold mb-1">Peak Hours</h3>
-              <p className="text-[#A1A1AA] text-xs mb-4">Average occupancy % by hour of day</p>
-              {peakHours.length === 0 ? (
-                <p className="text-[#A1A1AA] text-sm text-center py-8">No data yet</p>
-              ) : (
-                <Bar data={peakData} options={CHART_OPTIONS} />
-              )}
-            </div>
-
+            {/* Utilization */}
             <div className="bg-[#1C1C1E] rounded-2xl p-5">
               <h3 className="font-semibold mb-1">Zone Utilization</h3>
-              <p className="text-[#A1A1AA] text-xs mb-4">Booking utilization % per zone (all time)</p>
+              <p className="text-[#A1A1AA] text-xs mb-4">
+                % of available spot-hours that were booked in the selected period
+              </p>
               {utilization.length === 0 ? (
-                <p className="text-[#A1A1AA] text-sm text-center py-8">No data yet</p>
+                <p className="text-[#A1A1AA] text-sm text-center py-8">No data for this range</p>
               ) : (
                 <>
                   <Bar data={utilData} options={CHART_OPTIONS} />
@@ -128,7 +158,7 @@ export default function AdminAnalyticsPage() {
                         <tr className="text-[#A1A1AA] text-left border-b border-[#2C2C2E]">
                           <th className="pb-2 pr-6">Zone</th>
                           <th className="pb-2 pr-6">Total Spots</th>
-                          <th className="pb-2 pr-6">Total Bookings</th>
+                          <th className="pb-2 pr-6">Booked Hours</th>
                           <th className="pb-2">Utilization</th>
                         </tr>
                       </thead>
@@ -137,7 +167,7 @@ export default function AdminAnalyticsPage() {
                           <tr key={u.zoneId} className="border-b border-[#2C2C2E] last:border-0">
                             <td className="py-2 pr-6">Zone {u.zoneId}</td>
                             <td className="py-2 pr-6">{u.totalSpots}</td>
-                            <td className="py-2 pr-6">{u.totalBookings}</td>
+                            <td className="py-2 pr-6">{u.bookedHours.toFixed(1)} h</td>
                             <td className="py-2 font-medium">{u.utilizationPercent.toFixed(1)}%</td>
                           </tr>
                         ))}
@@ -147,47 +177,21 @@ export default function AdminAnalyticsPage() {
                 </>
               )}
             </div>
+
+            {/* Occupancy */}
+            <div className="bg-[#1C1C1E] rounded-2xl p-5">
+              <h3 className="font-semibold mb-1">Zone Occupancy</h3>
+              <p className="text-[#A1A1AA] text-xs mb-4">
+                % of available spot-hours that were occupied in the selected period
+              </p>
+              {occupancy.length === 0 ? (
+                <p className="text-[#A1A1AA] text-sm text-center py-8">No data for this range</p>
+              ) : (
+                <Bar data={occData} options={CHART_OPTIONS} />
+              )}
+            </div>
           </>
         )}
-
-        <div className="bg-[#1C1C1E] rounded-2xl p-5">
-          <div className="flex flex-wrap items-end gap-4 mb-4">
-            <div>
-              <h3 className="font-semibold mb-1">Zone Occupancy</h3>
-              <p className="text-[#A1A1AA] text-xs">Occupancy % per zone for a date range</p>
-            </div>
-            <div className="flex gap-3 ml-auto">
-              <div>
-                <label className="text-[#A1A1AA] text-xs block mb-1">From</label>
-                <input
-                  type="date"
-                  value={from}
-                  max={to}
-                  onChange={(e) => setFrom(e.target.value)}
-                  className="bg-[#2C2C2E] text-white text-sm rounded-xl px-3 py-1.5 outline-none border border-[#3C3C3E] focus:border-[#F5D26B]"
-                />
-              </div>
-              <div>
-                <label className="text-[#A1A1AA] text-xs block mb-1">To</label>
-                <input
-                  type="date"
-                  value={to}
-                  min={from}
-                  onChange={(e) => setTo(e.target.value)}
-                  className="bg-[#2C2C2E] text-white text-sm rounded-xl px-3 py-1.5 outline-none border border-[#3C3C3E] focus:border-[#F5D26B]"
-                />
-              </div>
-            </div>
-          </div>
-
-          {occLoading ? (
-            <div className="flex items-center justify-center h-32 text-[#A1A1AA]">Loading…</div>
-          ) : occupancy.length === 0 ? (
-            <p className="text-[#A1A1AA] text-sm text-center py-8">No data for this range</p>
-          ) : (
-            <Bar data={occData} options={CHART_OPTIONS} />
-          )}
-        </div>
       </div>
     </div>
   );
