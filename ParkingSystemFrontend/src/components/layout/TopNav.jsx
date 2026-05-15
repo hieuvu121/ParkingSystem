@@ -8,8 +8,8 @@ export default function TopNav({ page, setPage, user, wsConnected }) {
         { key: 'admin-analytics', label: 'Analytics' },
       ]
     : [
-        { key: 'dashboard', label: 'Dashboard' },
-        { key: 'bookings',  label: 'Bookings' },
+        { key: 'parking',  label: 'Parking' },
+        { key: 'bookings', label: 'Bookings' },
       ];
 
   return (
