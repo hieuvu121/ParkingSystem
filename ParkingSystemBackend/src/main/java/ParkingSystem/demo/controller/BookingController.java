@@ -28,7 +28,7 @@ public class BookingController {
     public ResponseEntity<BookingResponse> create(@AuthenticationPrincipal UserEntity user,
                                                   @Valid @RequestBody BookingRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(
-                bookingService.create(user, request.getSpotId(), request.getStartTime(), request.getEndTime()));
+                bookingService.create(user, request.getSpotId(), request.getStartTime(), request.getEndTime(), request.getPaymentType()));
     }
 
     @GetMapping("/bookings/my")

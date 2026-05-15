@@ -41,7 +41,10 @@ class BookingControllerTest {
 
     private BookingResponse bookingResponse() {
         return new BookingResponse(1L, 1L, 1L,
-                LocalDateTime.now(), LocalDateTime.now().plusHours(2), BookingStatus.APPROVED);
+                LocalDateTime.now(), LocalDateTime.now().plusHours(2), BookingStatus.APPROVED,
+                2L, 3L, "STANDARD",
+                10L, 1L, "INDOOR",
+                "PAY_PER_USE", 100L);
     }
 
     private void setAuthUser() {
@@ -55,8 +58,8 @@ class BookingControllerTest {
     @Test
     void create_validRequest_returns201() throws Exception {
         setAuthUser();
-        when(bookingService.create(any(), anyLong(), any(), any())).thenReturn(bookingResponse());
-        String json = "{\"spotId\":1,\"startTime\":\"2027-01-01T10:00:00\",\"endTime\":\"2027-01-01T12:00:00\"}";
+        when(bookingService.create(any(), anyLong(), any(), any(), any())).thenReturn(bookingResponse());
+        String json = "{\"spotId\":1,\"startTime\":\"2027-01-01T10:00:00\",\"endTime\":\"2027-01-01T12:00:00\",\"paymentType\":\"PAY_PER_USE\"}";
         mockMvc.perform(post("/api/bookings")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))

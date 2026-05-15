@@ -4,6 +4,7 @@ import ParkingSystem.demo.dto.PageResponse;
 import ParkingSystem.demo.dto.booking.BookingResponse;
 import ParkingSystem.demo.entity.BookingsEntity;
 import ParkingSystem.demo.entity.ParkingSpotsEntity;
+import ParkingSystem.demo.entity.ParkingZonesEntity;
 import ParkingSystem.demo.entity.UserEntity;
 import ParkingSystem.demo.enums.BookingStatus;
 import ParkingSystem.demo.enums.SpotStatus;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,16 +29,24 @@ public class BookingService {
     private final ParkingSpotService spotService;
 
     @Transactional
-    public BookingResponse create(UserEntity user, Long spotId, LocalDateTime startTime, LocalDateTime endTime) {
+    public BookingResponse create(UserEntity user, Long spotId,
+                                  LocalDateTime startTime, LocalDateTime endTime,
+                                  String paymentType) {
         ParkingSpotsEntity spot = spotService.findOrThrow(spotId);
         List<BookingsEntity> overlapping = bookingRepository.findOverlapping(spotId, startTime, endTime);
         if (!overlapping.isEmpty()) {
             throw new ConflictException("Spot " + spotId + " is already booked for this time window");
         }
+        long durationMinutes = ChronoUnit.MINUTES.between(startTime, endTime);
+        long costCents = "SUBSCRIPTION".equals(paymentType) ? 0L : (durationMinutes * 100L / 60L);
+
         BookingsEntity booking = BookingsEntity.builder()
                 .startTime(startTime).endTime(endTime)
                 .status(BookingStatus.APPROVED)
-                .userId(user).spotId(spot).build();
+                .userId(user).spotId(spot)
+                .paymentType(paymentType)
+                .costCents(costCents)
+                .build();
         BookingsEntity saved = bookingRepository.save(booking);
         if (!startTime.isAfter(LocalDateTime.now())) {
             spotService.updateStatus(spotId, SpotStatus.OCCUPIED);
@@ -98,7 +108,14 @@ public class BookingService {
     }
 
     private BookingResponse toResponse(BookingsEntity b) {
-        return new BookingResponse(b.getId(), b.getSpotId().getId(), b.getUserId().getId(),
-                b.getStartTime(), b.getEndTime(), b.getStatus());
+        ParkingSpotsEntity spot = b.getSpotId();
+        ParkingZonesEntity zone = spot.getZone_id();
+        return new BookingResponse(
+                b.getId(), spot.getId(), b.getUserId().getId(),
+                b.getStartTime(), b.getEndTime(), b.getStatus(),
+                spot.getRow(), spot.getCol(), spot.getType(),
+                zone.getId(), zone.getLevel(), zone.getType(),
+                b.getPaymentType(), b.getCostCents()
+        );
     }
 }
