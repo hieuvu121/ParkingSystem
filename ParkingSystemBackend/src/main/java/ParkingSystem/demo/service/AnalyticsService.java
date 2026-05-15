@@ -9,6 +9,7 @@ import ParkingSystem.demo.repository.ParkingZoneRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -21,14 +22,16 @@ public class AnalyticsService {
     private final ParkingZoneRepository zoneRepository;
 
     public List<OccupancyResponse> getOccupancy(LocalDateTime from, LocalDateTime to) {
-        long totalSpots = spotRepository.count();
-        if (totalSpots == 0) return List.of();
-        List<Object[]> rows = bookingRepository.countByZoneInRange(from, to);
+        if (spotRepository.count() == 0) return List.of();
+        double periodHours = Duration.between(from, to).toMinutes() / 60.0;
+        if (periodHours <= 0) return List.of();
+        List<Object[]> rows = bookingRepository.bookedHoursByZoneInRange(from, to);
         return rows.stream().map(r -> {
             Long zoneId = ((Number) r[0]).longValue();
-            long count = ((Number) r[1]).longValue();
+            double bookedHours = ((Number) r[1]).doubleValue();
             long zoneSpots = spotRepository.countByZone_idId(zoneId);
-            double pct = zoneSpots > 0 ? (count * 100.0 / zoneSpots) : 0;
+            double availableHours = zoneSpots * periodHours;
+            double pct = availableHours > 0 ? Math.min(bookedHours * 100.0 / availableHours, 100.0) : 0;
             return new OccupancyResponse(zoneId, from.toString(), to.toString(), pct);
         }).toList();
     }
