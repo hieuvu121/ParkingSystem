@@ -1,7 +1,11 @@
+import { useState } from 'react';
+
 const SPOT_SIZE = 28;
 const GAP = 6;
 
-export default function SpotGrid({ spots, loading }) {
+export default function SpotGrid({ spots, loading, onSpotClick }) {
+  const [hoveredId, setHoveredId] = useState(null);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-48 text-[#A1A1AA] text-sm">
@@ -28,7 +32,9 @@ export default function SpotGrid({ spots, loading }) {
         {spots.map((spot) => {
           const x = (Number(spot.col) - 1) * (SPOT_SIZE + GAP) + GAP;
           const y = (Number(spot.row) - 1) * (SPOT_SIZE + GAP) + GAP;
-          const fill = spot.status === 'AVAILABLE' ? '#4ADE80' : '#EF4444';
+          const isAvailable = spot.status === 'AVAILABLE';
+          const isHovered = hoveredId === spot.id && isAvailable;
+          const fill = isAvailable ? '#4ADE80' : '#EF4444';
           return (
             <rect
               key={spot.id}
@@ -39,6 +45,12 @@ export default function SpotGrid({ spots, loading }) {
               rx={4}
               fill={fill}
               opacity={0.9}
+              stroke={isHovered ? '#F5D26B' : 'none'}
+              strokeWidth={2}
+              style={{ cursor: isAvailable && onSpotClick ? 'pointer' : 'default' }}
+              onClick={isAvailable && onSpotClick ? () => onSpotClick(spot) : undefined}
+              onMouseEnter={isAvailable && onSpotClick ? () => setHoveredId(spot.id) : undefined}
+              onMouseLeave={() => setHoveredId(null)}
             >
               <title>{`Spot ${spot.row}-${spot.col}: ${spot.status}`}</title>
             </rect>
