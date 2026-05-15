@@ -55,19 +55,14 @@ public interface BookingRepository extends JpaRepository<BookingsEntity, Long> {
     List<Object[]> countByHourOfDay();
 
     @Query(value = """
-        SELECT ps.zone_id,
-               SUM(EXTRACT(EPOCH FROM (
-                   LEAST(b.end_time, CAST(:to AS timestamp))
-                   - GREATEST(b.start_time, CAST(:from AS timestamp))
-               )) / 3600.0) AS booked_hours
+        SELECT ps.zone_id, COUNT(*) AS cnt
         FROM bookings b
         JOIN parking_spots ps ON b.spot_id = ps.id
         WHERE b.status IN (1, 2)
-          AND b.start_time < :to
-          AND b.end_time > :from
+          AND b.start_time >= :from AND b.end_time <= :to
         GROUP BY ps.zone_id
     """, nativeQuery = true)
-    List<Object[]> bookedHoursByZoneInRange(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+    List<Object[]> countByZoneInRange(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
     @Query(value = """
         SELECT COUNT(*) FROM bookings b
