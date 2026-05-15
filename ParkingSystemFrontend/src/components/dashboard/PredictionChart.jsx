@@ -52,6 +52,7 @@ export default function PredictionChart({ predictions }) {
       },
     },
     plugins: {
+      legend: { display: false },
       tooltip: {
         callbacks: { label: (ctx) => `${ctx.raw}% available` },
       },
