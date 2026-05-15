@@ -8,9 +8,11 @@ import ParkingSystem.demo.entity.UserEntity;
 import ParkingSystem.demo.exception.ConflictException;
 import ParkingSystem.demo.exception.ResourceNotFoundException;
 import ParkingSystem.demo.repository.SubscriptionRepository;
+import ParkingSystem.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -23,6 +25,7 @@ public class SubscriptionService {
 
     private final SubscriptionRepository subscriptionRepository;
     private final PackageService packageService;
+    private final UserRepository userRepository;
 
     public SubscriptionResponse subscribe(UserEntity user, Long packageId) {
         if (subscriptionRepository.findActiveByUserId(user.getId(), new Date()).isPresent()) {
@@ -40,6 +43,47 @@ public class SubscriptionService {
         return subscriptionRepository.findActiveByUserId(userId, new Date())
                 .map(this::toResponse)
                 .orElseThrow(() -> new ResourceNotFoundException("No active subscription for user: " + userId));
+    }
+
+    // --- Admin methods ---
+
+    public SubscriptionResponse adminGetUserSubscription(Long userId) {
+        return subscriptionRepository.findActiveByUserId(userId, new Date())
+                .map(this::toResponse)
+                .orElseThrow(() -> new ResourceNotFoundException("No active subscription for user: " + userId));
+    }
+
+    @Transactional
+    public SubscriptionResponse adminAddUserSubscription(Long userId, Long packageId) {
+        if (subscriptionRepository.findActiveByUserId(userId, new Date()).isPresent()) {
+            throw new ConflictException("User already has an active subscription");
+        }
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
+        PackagesEntity pkg = packageService.findOrThrow(packageId);
+        Date start = new Date();
+        Date end = Date.from(Instant.now().plus(pkg.getDurations(), ChronoUnit.DAYS));
+        SubscriptionsEntity sub = SubscriptionsEntity.builder()
+                .userId(user).packageName(pkg).startDate(start).endDate(end).price(pkg.getPrice()).build();
+        return toResponse(subscriptionRepository.save(sub));
+    }
+
+    @Transactional
+    public SubscriptionResponse adminChangeUserSubscription(Long userId, Long packageId) {
+        SubscriptionsEntity sub = subscriptionRepository.findActiveByUserId(userId, new Date())
+                .orElseThrow(() -> new ResourceNotFoundException("No active subscription for user: " + userId));
+        PackagesEntity pkg = packageService.findOrThrow(packageId);
+        sub.setPackageName(pkg);
+        sub.setPrice(pkg.getPrice());
+        sub.setEndDate(Date.from(Instant.now().plus(pkg.getDurations(), ChronoUnit.DAYS)));
+        return toResponse(subscriptionRepository.save(sub));
+    }
+
+    @Transactional
+    public void adminRemoveUserSubscription(Long userId) {
+        SubscriptionsEntity sub = subscriptionRepository.findActiveByUserId(userId, new Date())
+                .orElseThrow(() -> new ResourceNotFoundException("No active subscription for user: " + userId));
+        subscriptionRepository.delete(sub);
     }
 
     public PageResponse<SubscriptionResponse> listAll(Pageable pageable) {

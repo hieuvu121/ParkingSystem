@@ -75,12 +75,18 @@ public interface BookingRepository extends JpaRepository<BookingsEntity, Long> {
         JOIN parking_spots ps ON b.spot_id = ps.id
         WHERE ps.zone_id = :zoneId
           AND b.status IN (1, 2)
+          AND b.start_time >= :from
+          AND b.start_time <= :to
           AND EXTRACT(DOW FROM b.start_time) = :pgDow
           AND EXTRACT(HOUR FROM b.start_time) = :hour
     """, nativeQuery = true)
     long countHistoricalBookings(@Param("zoneId") Long zoneId,
                                   @Param("pgDow") int pgDow,
-                                  @Param("hour") int hour);
+                                  @Param("hour") int hour,
+                                  @Param("from") LocalDateTime from,
+                                  @Param("to") LocalDateTime to);
+
+    long countByUserId_IdAndStatus(Long userId, BookingStatus status);
 
     @Query("""
         SELECT b FROM BookingsEntity b
