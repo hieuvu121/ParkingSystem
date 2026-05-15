@@ -1,4 +1,7 @@
 .env
+# Local superpowers and worktrees
 .superpowers/
-.docs/
 .worktrees/
+
+# Superpowers docs
+/docs/
