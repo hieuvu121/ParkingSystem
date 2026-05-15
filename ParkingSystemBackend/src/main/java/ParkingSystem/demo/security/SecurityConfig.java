@@ -30,12 +30,34 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/auth/verify").permitAll()
-                        .requestMatchers("/error", "/ws/**").permitAll()
-                        .anyRequest().authenticated()
-                )
+                //.authorizeHttpRequests(auth -> auth
+                //.requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
+                //.requestMatchers(HttpMethod.GET, "/api/auth/verify").permitAll()
+                //.requestMatchers("/error", "/ws/**").permitAll()
+                //.anyRequest().authenticated()
+                //)
+				.authorizeHttpRequests(auth -> auth
+					.requestMatchers(
+				    	"/",
+				       	"/index.html",
+				       	"/assets/**",
+				        "/favicon.ico",
+				        "/vite.svg"
+				    ).permitAll()
+
+				    .requestMatchers(HttpMethod.POST,
+				       	"/api/auth/register",
+				        "/api/auth/login"
+				    ).permitAll()
+
+				    .requestMatchers(HttpMethod.GET,
+				        "/api/auth/verify"
+				    ).permitAll()
+
+				    .requestMatchers("/error", "/ws/**").permitAll()
+
+				    .anyRequest().authenticated()
+				)
                 .userDetailsService(userDetailsService)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
