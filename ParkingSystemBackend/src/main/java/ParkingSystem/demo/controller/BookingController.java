@@ -1,5 +1,6 @@
 package ParkingSystem.demo.controller;
 
+import ParkingSystem.demo.dto.CursorPageResponse;
 import ParkingSystem.demo.dto.PageResponse;
 import ParkingSystem.demo.dto.booking.BookingRequest;
 import ParkingSystem.demo.dto.booking.BookingResponse;
@@ -14,11 +15,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api")
-@RequiredArgsConstructor
 public class BookingController {
 
     private final BookingService bookingService;
@@ -33,8 +32,13 @@ public class BookingController {
 
     @GetMapping("/bookings/my")
     @PreAuthorize("hasRole('USERS')")
-    public ResponseEntity<List<BookingResponse>> myBookings(@AuthenticationPrincipal UserEntity user) {
-        return ResponseEntity.ok(bookingService.listForUser(user.getId()));
+    public ResponseEntity<CursorPageResponse<BookingResponse>> myBookings(
+            @AuthenticationPrincipal UserEntity user,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "20") int limit,
+            @RequestParam(defaultValue = "desc") String sort) {
+        return ResponseEntity.ok(bookingService.listForUserCursor(user.getId(), status, cursor, limit, sort));
     }
 
     @GetMapping("/bookings/{id}")

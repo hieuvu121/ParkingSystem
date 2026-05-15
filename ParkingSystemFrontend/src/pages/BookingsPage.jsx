@@ -25,29 +25,67 @@ const STATUS_STYLE = {
   APPROVED:  'bg-[#14532d] text-[#4ADE80]',
   EXPIRED:   'bg-[#1C1C1E] text-[#6B7280]',
   CANCELLED: 'bg-[#3B0000] text-[#EF4444]',
+  PENDING:   'bg-[#1E3A8A] text-[#93C5FD]',
 };
+
+const TABS = [
+  { key: 'ACTIVE', label: 'Active' },
+  { key: 'EXPIRED', label: 'Expired' },
+  { key: 'CANCELLED', label: 'Cancelled' },
+];
 
 export default function BookingsPage({ refreshKey }) {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
   const [cancelling, setCancelling] = useState(null);
+  const [activeTab, setActiveTab] = useState('ACTIVE');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [cursor, setCursor] = useState(null);
+  const [hasNext, setHasNext] = useState(false);
+
+  async function loadBookings({ reset = false } = {}) {
+    if (reset) {
+      setLoading(true);
+      setCursor(null);
+      setHasNext(false);
+    } else {
+      setLoadingMore(true);
+    }
+    setError('');
+    try {
+      const data = await getMyBookings({
+        status: activeTab,
+        cursor: reset ? null : cursor,
+        limit: 5,
+        sort: sortOrder,
+      });
+      setBookings((prev) => reset ? data.data : [...prev, ...data.data]);
+      setCursor(data.meta?.nextCursor ?? null);
+      setHasNext(Boolean(data.meta?.hasNext));
+    } catch (err) {
+      setError(err.message ?? 'Failed to load bookings');
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  }
 
   useEffect(() => {
-    setLoading(true);
-    getMyBookings()
-      .then((data) => setBookings([...data].reverse()))
-      .catch((err) => setError(err.message ?? 'Failed to load bookings'))
-      .finally(() => setLoading(false));
-  }, [refreshKey]);
+    loadBookings({ reset: true });
+  }, [refreshKey, activeTab, sortOrder]);
 
   async function handleCancel(id) {
     setCancelling(id);
     try {
       await cancelBooking(id);
-      setBookings((prev) =>
-        prev.map((b) => b.id === id ? { ...b, status: 'CANCELLED' } : b)
-      );
+      setBookings((prev) => {
+        if (activeTab === 'CANCELLED') {
+          return prev.map((b) => b.id === id ? { ...b, status: 'CANCELLED' } : b);
+        }
+        return prev.filter((b) => b.id !== id);
+      });
     } catch (e) {
       setError(e.message ?? 'Failed to cancel booking');
     } finally {
@@ -65,8 +103,38 @@ export default function BookingsPage({ refreshKey }) {
 
   return (
     <div className="min-h-screen bg-[#111111] text-white">
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-6">My Bookings</h1>
+      <div className="max-w-3xl mx-auto px-4 py-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+          <h1 className="text-2xl font-bold">My Bookings</h1>
+          <div className="flex items-center gap-2 text-xs text-[#A1A1AA]">
+            <span>Sort</span>
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value)}
+              className="bg-[#1C1C1E] border border-[#2C2C2E] rounded-full px-3 py-1 text-white"
+            >
+              <option value="desc">Newest first</option>
+              <option value="asc">Oldest first</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2 mb-6">
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-4 py-2 rounded-full text-sm font-semibold transition border ${
+                activeTab === tab.key
+                  ? 'bg-[#F5D26B] text-black border-[#F5D26B]'
+                  : 'bg-[#1C1C1E] text-[#A1A1AA] border-[#2C2C2E] hover:text-white'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
         {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
 
@@ -94,7 +162,7 @@ export default function BookingsPage({ refreshKey }) {
                 {formatDuration(b.startTime, b.endTime)} · {formatCost(b.paymentType, b.costCents)}
               </p>
 
-              {b.status === 'APPROVED' && (
+              {b.status === 'APPROVED' && activeTab === 'ACTIVE' && (
                 <button
                   type="button"
                   disabled={cancelling === b.id}
@@ -107,6 +175,19 @@ export default function BookingsPage({ refreshKey }) {
             </div>
           ))}
         </div>
+
+        {hasNext && (
+          <div className="mt-6 flex justify-center">
+            <button
+              type="button"
+              disabled={loadingMore}
+              onClick={() => loadBookings({ reset: false })}
+              className="px-4 py-2 rounded-full text-sm font-semibold bg-[#2C2C2E] text-white hover:bg-[#3C3C3E] disabled:opacity-50"
+            >
+              {loadingMore ? 'Loading…' : 'Load more'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

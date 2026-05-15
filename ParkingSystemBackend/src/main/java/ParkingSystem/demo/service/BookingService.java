@@ -1,5 +1,7 @@
 package ParkingSystem.demo.service;
 
+import ParkingSystem.demo.dto.CursorMeta;
+import ParkingSystem.demo.dto.CursorPageResponse;
 import ParkingSystem.demo.dto.PageResponse;
 import ParkingSystem.demo.dto.booking.BookingResponse;
 import ParkingSystem.demo.entity.BookingsEntity;
@@ -12,12 +14,17 @@ import ParkingSystem.demo.exception.ConflictException;
 import ParkingSystem.demo.exception.ResourceNotFoundException;
 import ParkingSystem.demo.repository.BookingRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
+import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -118,4 +125,81 @@ public class BookingService {
                 b.getPaymentType(), b.getCostCents()
         );
     }
+
+    public CursorPageResponse<BookingResponse> listForUserCursor(Long userId,
+                                                                 String statusParam,
+                                                                 String cursor,
+                                                                 int limit,
+                                                                 String sort) {
+        int pageSize = Math.min(Math.max(limit, 1), 50);
+        String normalizedSort = (sort == null) ? "desc" : sort.toLowerCase();
+        boolean asc = "asc".equals(normalizedSort);
+        if (!asc && !"desc".equals(normalizedSort)) {
+            throw new IllegalArgumentException("Invalid sort, use 'asc' or 'desc'");
+        }
+
+        StatusFilter filter = parseStatusFilter(statusParam);
+        CursorPosition cursorPos = parseCursor(cursor);
+        boolean cursorEnabled = cursorPos.time != null && cursorPos.id != null;
+        LocalDateTime safeTime = cursorEnabled ? cursorPos.time : LocalDateTime.of(1970, 1, 1, 0, 0);
+        Long safeId = cursorEnabled ? cursorPos.id : 0L;
+        PageRequest pageable = PageRequest.of(0, pageSize + 1);
+
+        List<BookingsEntity> results = asc
+                ? bookingRepository.findUserBookingsAsc(userId, filter.statuses, filter.enabled,
+                cursorEnabled, safeTime, safeId, pageable)
+                : bookingRepository.findUserBookingsDesc(userId, filter.statuses, filter.enabled,
+                cursorEnabled, safeTime, safeId, pageable);
+
+        boolean hasNext = results.size() > pageSize;
+        List<BookingsEntity> page = hasNext ? results.subList(0, pageSize) : results;
+        List<BookingResponse> content = page.stream().map(this::checkAndExpire).toList();
+
+        String nextCursor = null;
+        if (hasNext && !page.isEmpty()) {
+            BookingsEntity last = page.get(page.size() - 1);
+            nextCursor = encodeCursor(last.getStartTime(), last.getId());
+        }
+        return new CursorPageResponse<>(content, new CursorMeta(hasNext, nextCursor));
+    }
+
+    private StatusFilter parseStatusFilter(String statusParam) {
+        if (statusParam == null || statusParam.isBlank()) {
+            return new StatusFilter(false, Collections.emptyList());
+        }
+        String normalized = statusParam.trim().toUpperCase();
+        if ("ACTIVE".equals(normalized)) {
+            return new StatusFilter(true, List.of(BookingStatus.PENDING, BookingStatus.APPROVED));
+        }
+        try {
+            return new StatusFilter(true, List.of(BookingStatus.valueOf(normalized)));
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("Invalid status filter");
+        }
+    }
+
+    private CursorPosition parseCursor(String cursor) {
+        if (cursor == null || cursor.isBlank()) {
+            return new CursorPosition(null, null);
+        }
+        try {
+            String decoded = new String(Base64.getUrlDecoder().decode(cursor), StandardCharsets.UTF_8);
+            String[] parts = decoded.split("\\|", 2);
+            LocalDateTime time = LocalDateTime.parse(parts[0]);
+            Long id = Long.parseLong(parts[1]);
+            return new CursorPosition(time, id);
+        } catch (IllegalArgumentException | DateTimeParseException ex) {
+            throw new IllegalArgumentException("Invalid cursor");
+        }
+    }
+
+    private String encodeCursor(LocalDateTime time, Long id) {
+        String raw = time + "|" + id;
+        return Base64.getUrlEncoder().withoutPadding()
+                .encodeToString(raw.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private record StatusFilter(boolean enabled, List<BookingStatus> statuses) {}
+
+    private record CursorPosition(LocalDateTime time, Long id) {}
 }

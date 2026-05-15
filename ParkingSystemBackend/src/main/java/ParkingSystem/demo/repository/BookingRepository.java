@@ -2,6 +2,7 @@ package ParkingSystem.demo.repository;
 
 import ParkingSystem.demo.entity.BookingsEntity;
 import ParkingSystem.demo.enums.BookingStatus;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -80,4 +81,38 @@ public interface BookingRepository extends JpaRepository<BookingsEntity, Long> {
     long countHistoricalBookings(@Param("zoneId") Long zoneId,
                                   @Param("pgDow") int pgDow,
                                   @Param("hour") int hour);
+
+    @Query("""
+        SELECT b FROM BookingsEntity b
+        WHERE b.userId.id = :userId
+          AND (:statusFilter = false OR b.status IN :statuses)
+          AND (:cursorEnabled = false
+               OR b.startTime < :cursorTime
+               OR (b.startTime = :cursorTime AND b.id < :cursorId))
+        ORDER BY b.startTime DESC, b.id DESC
+    """)
+    List<BookingsEntity> findUserBookingsDesc(@Param("userId") Long userId,
+                                              @Param("statuses") List<BookingStatus> statuses,
+                                              @Param("statusFilter") boolean statusFilter,
+                                              @Param("cursorEnabled") boolean cursorEnabled,
+                                              @Param("cursorTime") LocalDateTime cursorTime,
+                                              @Param("cursorId") Long cursorId,
+                                              Pageable pageable);
+
+    @Query("""
+        SELECT b FROM BookingsEntity b
+        WHERE b.userId.id = :userId
+          AND (:statusFilter = false OR b.status IN :statuses)
+          AND (:cursorEnabled = false
+               OR b.startTime > :cursorTime
+               OR (b.startTime = :cursorTime AND b.id > :cursorId))
+        ORDER BY b.startTime ASC, b.id ASC
+    """)
+    List<BookingsEntity> findUserBookingsAsc(@Param("userId") Long userId,
+                                             @Param("statuses") List<BookingStatus> statuses,
+                                             @Param("statusFilter") boolean statusFilter,
+                                             @Param("cursorEnabled") boolean cursorEnabled,
+                                             @Param("cursorTime") LocalDateTime cursorTime,
+                                             @Param("cursorId") Long cursorId,
+                                             Pageable pageable);
 }

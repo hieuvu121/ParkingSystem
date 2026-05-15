@@ -16,8 +16,14 @@ export async function createBooking({ spotId, startTime, endTime, paymentType })
   return data;
 }
 
-export async function getMyBookings() {
-  const res = await apiFetch('/api/bookings/my');
+export async function getMyBookings({ status, cursor, limit = 10, sort = 'desc' } = {}) {
+  const params = new URLSearchParams();
+  if (status) params.set('status', status);
+  if (cursor) params.set('cursor', cursor);
+  if (limit) params.set('limit', String(limit));
+  if (sort) params.set('sort', sort);
+
+  const res = await apiFetch(`/api/bookings/my?${params.toString()}`);
   const data = await res.json();
   if (!res.ok) throw { status: res.status, message: data.message ?? 'Failed to load bookings' };
   return data;

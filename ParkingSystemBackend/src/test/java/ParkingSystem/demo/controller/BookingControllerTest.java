@@ -1,5 +1,7 @@
 package ParkingSystem.demo.controller;
 
+import ParkingSystem.demo.dto.CursorMeta;
+import ParkingSystem.demo.dto.CursorPageResponse;
 import ParkingSystem.demo.dto.PageResponse;
 import ParkingSystem.demo.dto.booking.BookingResponse;
 import ParkingSystem.demo.entity.UserEntity;
@@ -79,10 +81,13 @@ class BookingControllerTest {
     @Test
     void myBookings_returnsUserBookings() throws Exception {
         setAuthUser();
-        when(bookingService.listForUser(1L)).thenReturn(List.of(bookingResponse()));
+        CursorPageResponse<BookingResponse> page = new CursorPageResponse<>(
+                List.of(bookingResponse()), new CursorMeta(false, null));
+        when(bookingService.listForUserCursor(eq(1L), any(), any(), anyInt(), any()))
+                .thenReturn(page);
         mockMvc.perform(get("/api/bookings/my"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(1));
+                .andExpect(jsonPath("$.data[0].id").value(1));
     }
 
     @Test
