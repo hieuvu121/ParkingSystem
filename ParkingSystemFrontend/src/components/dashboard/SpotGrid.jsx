@@ -4,17 +4,6 @@ const SPOT_SIZE = 28;
 const GAP = 6;
 const LABEL_SPACE = 18;
 
-function rowToLabel(row) {
-  let n = Math.max(1, Number(row));
-  let label = '';
-  while (n > 0) {
-    n -= 1;
-    label = String.fromCharCode(65 + (n % 26)) + label;
-    n = Math.floor(n / 26);
-  }
-  return label;
-}
-
 export default function SpotGrid({ spots, loading, onSpotClick }) {
   const [hoveredId, setHoveredId] = useState(null);
 
@@ -67,7 +56,7 @@ export default function SpotGrid({ spots, loading, onSpotClick }) {
               fontSize="10"
               fill="#A1A1AA"
             >
-              {rowToLabel(i + 1)}
+              {i + 1}
             </text>
           ))}
           {spots.map((spot) => {
@@ -76,7 +65,6 @@ export default function SpotGrid({ spots, loading, onSpotClick }) {
             const isAvailable = spot.status === 'AVAILABLE';
             const isHovered = hoveredId === spot.id && isAvailable;
             const fill = isAvailable ? '#4ADE80' : '#EF4444';
-            const rowLabel = rowToLabel(spot.row);
             return (
               <rect
                 key={spot.id}
@@ -94,7 +82,7 @@ export default function SpotGrid({ spots, loading, onSpotClick }) {
                 onMouseEnter={isAvailable && onSpotClick ? () => setHoveredId(spot.id) : undefined}
                 onMouseLeave={() => setHoveredId(null)}
               >
-                <title>{`Spot ${rowLabel}-${spot.col}: ${spot.status}`}</title>
+                <title>{`Spot R${spot.row}-C${spot.col}: ${spot.status}`}</title>
               </rect>
             );
           })}
