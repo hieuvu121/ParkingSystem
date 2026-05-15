@@ -9,3 +9,20 @@ export async function getMySubscription() {
   }
   return res.json();
 }
+
+export async function subscribe(packageId) {
+  const res = await apiFetch('/api/subscriptions', {
+    method: 'POST',
+    body: JSON.stringify({ packageId }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw { status: res.status, message: data.message ?? 'Failed to subscribe' };
+  return data;
+}
+
+export async function getPackages() {
+  const res = await apiFetch('/api/packages');
+  const data = await res.json();
+  if (!res.ok) throw { status: res.status, message: data.message ?? 'Failed to load packages' };
+  return data;
+}
