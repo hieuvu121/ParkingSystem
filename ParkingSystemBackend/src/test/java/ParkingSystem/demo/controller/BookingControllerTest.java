@@ -1,5 +1,7 @@
 package ParkingSystem.demo.controller;
 
+import ParkingSystem.demo.dto.CursorMeta;
+import ParkingSystem.demo.dto.CursorPageResponse;
 import ParkingSystem.demo.dto.PageResponse;
 import ParkingSystem.demo.dto.booking.BookingResponse;
 import ParkingSystem.demo.entity.UserEntity;
@@ -41,7 +43,10 @@ class BookingControllerTest {
 
     private BookingResponse bookingResponse() {
         return new BookingResponse(1L, 1L, 1L,
-                LocalDateTime.now(), LocalDateTime.now().plusHours(2), BookingStatus.APPROVED);
+                LocalDateTime.now(), LocalDateTime.now().plusHours(2), BookingStatus.APPROVED,
+                2L, 3L, "STANDARD",
+                10L, 1L, "INDOOR",
+                "PAY_PER_USE", 100L);
     }
 
     private void setAuthUser() {
@@ -55,8 +60,8 @@ class BookingControllerTest {
     @Test
     void create_validRequest_returns201() throws Exception {
         setAuthUser();
-        when(bookingService.create(any(), anyLong(), any(), any())).thenReturn(bookingResponse());
-        String json = "{\"spotId\":1,\"startTime\":\"2027-01-01T10:00:00\",\"endTime\":\"2027-01-01T12:00:00\"}";
+        when(bookingService.create(any(), anyLong(), any(), any(), any())).thenReturn(bookingResponse());
+        String json = "{\"spotId\":1,\"startTime\":\"2027-01-01T10:00:00\",\"endTime\":\"2027-01-01T12:00:00\",\"paymentType\":\"PAY_PER_USE\"}";
         mockMvc.perform(post("/api/bookings")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
@@ -76,10 +81,13 @@ class BookingControllerTest {
     @Test
     void myBookings_returnsUserBookings() throws Exception {
         setAuthUser();
-        when(bookingService.listForUser(1L)).thenReturn(List.of(bookingResponse()));
+        CursorPageResponse<BookingResponse> page = new CursorPageResponse<>(
+                List.of(bookingResponse()), new CursorMeta(false, null));
+        when(bookingService.listForUserCursor(eq(1L), any(), any(), anyInt(), any()))
+                .thenReturn(page);
         mockMvc.perform(get("/api/bookings/my"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(1));
+                .andExpect(jsonPath("$.data[0].id").value(1));
     }
 
     @Test

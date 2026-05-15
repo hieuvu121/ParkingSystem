@@ -8,7 +8,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @NoArgsConstructor
@@ -21,30 +20,27 @@ public class BookingsEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable=false)
+    @Column(nullable = false)
     private LocalDateTime startTime;
 
-    @Column(nullable=false)
+    @Column(nullable = false)
     private LocalDateTime endTime;
 
     @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
+    @Enumerated(EnumType.ORDINAL)
     private BookingStatus status;
 
+    @Column(nullable = false)
+    private String paymentType;
+
+    @Column(nullable = false)
+    private Long costCents;
+
     @ManyToOne
-    @JoinColumn(
-            name="createdBy",
-            referencedColumnName = "id",
-            nullable = false
-    )
+    @JoinColumn(name = "createdBy", referencedColumnName = "id", nullable = false)
     private UserEntity userId;
 
     @ManyToOne
-    @JoinColumn(
-            name="spotId",
-            referencedColumnName = "id",
-            nullable = false
-    )
+    @JoinColumn(name = "spotId", referencedColumnName = "id", nullable = false)
     private ParkingSpotsEntity spotId;
-
 }

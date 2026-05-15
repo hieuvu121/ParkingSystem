@@ -17,7 +17,7 @@ class JwtServiceTest {
 
     @BeforeEach
     void setUp() {
-        String testSecret = Base64.getEncoder().encodeToString(
+        String testSecret = Base64.getUrlEncoder().withoutPadding().encodeToString(
                 Jwts.SIG.HS256.key().build().getEncoded());
         jwtService = new JwtService(testSecret, 86400000L);
 
@@ -49,7 +49,7 @@ class JwtServiceTest {
 
     @Test
     void isTokenValid_withExpiredToken_returnsFalse() {
-        String expiredSecret = Base64.getEncoder().encodeToString(
+        String expiredSecret = Base64.getUrlEncoder().withoutPadding().encodeToString(
                 Jwts.SIG.HS256.key().build().getEncoded());
         JwtService expiredService = new JwtService(expiredSecret, -1000L);
         String token = expiredService.generateToken(testUser);

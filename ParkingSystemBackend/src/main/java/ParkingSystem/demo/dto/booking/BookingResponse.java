@@ -4,6 +4,11 @@ import ParkingSystem.demo.enums.BookingStatus;
 
 import java.time.LocalDateTime;
 
-public record BookingResponse(Long id, Long spotId, Long userId,
-                               LocalDateTime startTime, LocalDateTime endTime,
-                               BookingStatus status) {}
+public record BookingResponse(
+        Long id, Long spotId, Long userId,
+        LocalDateTime startTime, LocalDateTime endTime,
+        BookingStatus status,
+        Long spotRow, Long spotCol, String spotType,
+        Long zoneId, Long zoneLevel, String zoneType,
+        String paymentType, Long costCents
+) {}
