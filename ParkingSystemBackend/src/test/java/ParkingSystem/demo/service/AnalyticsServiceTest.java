@@ -47,10 +47,11 @@ class AnalyticsServiceTest {
 
     @Test
     void getOccupancy_withData_returnsOccupancyPercent() {
-        var from = LocalDateTime.now().minusDays(1);
         var to = LocalDateTime.now();
+        var from = to.minusHours(1);
         when(spotRepository.count()).thenReturn(10L);
-        when(bookingRepository.countByZoneInRange(from, to)).thenReturn(objectRows(new Object[]{1L, 5L}));
+        when(bookingRepository.bookedHoursByZoneInRange(any(), any()))
+                .thenReturn(objectRows(new Object[]{1L, 5.0}));
         when(spotRepository.countByZone_idId(1L)).thenReturn(10L);
 
         var result = analyticsService.getOccupancy(from, to);
