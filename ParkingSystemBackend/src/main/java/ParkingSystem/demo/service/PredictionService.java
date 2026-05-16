@@ -26,7 +26,8 @@ public class PredictionService {
         int javaDow = targetTime.getDayOfWeek().getValue();
         int pgDow = javaDow % 7;
         int hour = targetTime.getHour();
-        long historicalBooked = bookingRepository.countHistoricalBookings(zoneId, pgDow, hour);
+        LocalDateTime from = targetTime.minusDays(30);
+        long historicalBooked = bookingRepository.countHistoricalBookings(zoneId, pgDow, hour, from, targetTime);
         double avgBooked = Math.min(historicalBooked, totalSpots);
         double probability = (totalSpots - avgBooked) / (double) totalSpots;
         return new AvailabilityPredictionResponse(zoneId, targetTime.toString(),
