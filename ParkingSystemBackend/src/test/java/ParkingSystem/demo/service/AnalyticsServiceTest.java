@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -79,11 +80,14 @@ class AnalyticsServiceTest {
 
     @Test
     void getUtilization_returnsPerZoneStats() {
+        var to = LocalDateTime.now();
+        var from = to.minusHours(1);
         when(zoneRepository.findAll()).thenReturn(List.of(zone(1L)));
         when(spotRepository.countByZone_idId(1L)).thenReturn(10L);
-        when(bookingRepository.countByZoneId(1L)).thenReturn(3L);
+        when(bookingRepository.bookedHoursByZoneInRange(any(), any()))
+                .thenReturn(objectRows(new Object[]{1L, 3.0}));
 
-        var result = analyticsService.getUtilization();
+        var result = analyticsService.getUtilization(from, to);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).utilizationPercent()).isEqualTo(30.0);
@@ -91,11 +95,13 @@ class AnalyticsServiceTest {
 
     @Test
     void getUtilization_noSpots_returnsZeroPercent() {
+        var to = LocalDateTime.now();
+        var from = to.minusHours(1);
         when(zoneRepository.findAll()).thenReturn(List.of(zone(1L)));
         when(spotRepository.countByZone_idId(1L)).thenReturn(0L);
-        when(bookingRepository.countByZoneId(1L)).thenReturn(0L);
+        when(bookingRepository.bookedHoursByZoneInRange(any(), any())).thenReturn(new ArrayList<>());
 
-        var result = analyticsService.getUtilization();
+        var result = analyticsService.getUtilization(from, to);
 
         assertThat(result.get(0).utilizationPercent()).isEqualTo(0.0);
     }

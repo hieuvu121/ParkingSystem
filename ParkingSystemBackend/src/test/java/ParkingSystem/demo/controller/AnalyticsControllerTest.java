@@ -55,7 +55,7 @@ class AnalyticsControllerTest {
 
     @Test
     void utilization_returnsUtilizationData() throws Exception {
-        when(analyticsService.getUtilization())
+        when(analyticsService.getUtilization(any(), any()))
                 .thenReturn(List.of(new UtilizationResponse(1L, 10L, 5L, 50.0)));
         mockMvc.perform(get("/api/analytics/utilization"))
                 .andExpect(status().isOk())
