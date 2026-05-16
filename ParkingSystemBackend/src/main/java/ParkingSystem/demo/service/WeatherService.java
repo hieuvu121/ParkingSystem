@@ -1,14 +1,12 @@
 package ParkingSystem.demo.service;
 
 import ParkingSystem.demo.dto.weather.WeatherInfo;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
 
-@Slf4j
 @Service
 public class WeatherService {
 
@@ -38,7 +36,11 @@ public class WeatherService {
                 .retrieve()
                 .body(OWMResponse.class);
 
-        OWMWeatherItem item = response.weather().get(0);
+        List<OWMWeatherItem> weatherItems = response.weather();
+        if (weatherItems == null || weatherItems.isEmpty()) {
+            throw new IllegalStateException("OpenWeatherMap returned no weather data");
+        }
+        OWMWeatherItem item = weatherItems.get(0);
         return new WeatherInfo(item.main(), item.description(), response.main().temp());
     }
 
