@@ -110,7 +110,7 @@ class BookingControllerTest {
     @Test
     void listAll_admin_returnsAll() throws Exception {
         PageResponse<BookingResponse> page = PageResponse.from(new PageImpl<>(List.of(bookingResponse())));
-        when(bookingService.listAll(any(Pageable.class))).thenReturn(page);
+        when(bookingService.listAll(any(), any(), any(), any(Pageable.class))).thenReturn(page);
         mockMvc.perform(get("/api/admin/bookings"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].userId").value(1));
