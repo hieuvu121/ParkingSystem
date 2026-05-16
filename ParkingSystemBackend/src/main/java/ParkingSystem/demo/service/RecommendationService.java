@@ -1,11 +1,13 @@
 package ParkingSystem.demo.service;
 
 import ParkingSystem.demo.dto.recommendation.RecommendationResponse;
+import ParkingSystem.demo.dto.weather.WeatherInfo;
 import ParkingSystem.demo.entity.ParkingZonesEntity;
 import ParkingSystem.demo.enums.SpotStatus;
 import ParkingSystem.demo.repository.ParkingSpotRepository;
 import ParkingSystem.demo.repository.ParkingZoneRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -15,6 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RecommendationService {
@@ -22,8 +25,15 @@ public class RecommendationService {
     private final ParkingZoneRepository zoneRepository;
     private final ParkingSpotRepository spotRepository;
     private final PredictionService predictionService;
+    private final WeatherService weatherService;
+    private final OpenAiService openAiService;
 
     public Optional<RecommendationResponse> recommend(Double userLat, Double userLng) {
+        return selectZone(userLat, userLng)
+                .map(draft -> enrichWithWeather(draft, userLat, userLng));
+    }
+
+    private Optional<RecommendationResponse> selectZone(Double userLat, Double userLng) {
         List<ParkingZonesEntity> zones = zoneRepository.findAll();
         LocalDateTime in30 = LocalDateTime.now().plusMinutes(30);
 
@@ -65,6 +75,17 @@ public class RecommendationService {
                     double prob = predictionService.predict(z.getId(), in30).availabilityProbability();
                     return new RecommendationResponse(z.getId(), "Best predicted availability", avail, prob);
                 });
+    }
+
+    private RecommendationResponse enrichWithWeather(RecommendationResponse draft, Double lat, Double lng) {
+        try {
+            WeatherInfo weather = weatherService.getWeather(lat, lng);
+            String reason = openAiService.generateReason(draft, weather);
+            return new RecommendationResponse(draft.zoneId(), reason, draft.availableSpots(), draft.predictedProbability());
+        } catch (Exception e) {
+            log.warn("Weather/AI enrichment failed, using static reason: {}", e.getMessage());
+            return draft;
+        }
     }
 
     private double haversine(double lat1, double lon1, double lat2, double lon2) {
