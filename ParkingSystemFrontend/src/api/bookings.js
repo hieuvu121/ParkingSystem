@@ -29,6 +29,17 @@ export async function getMyBookings({ status, cursor, limit = 10, sort = 'desc' 
   return data;
 }
 
+export async function getAdminBookings(page = 0, size = 15, { status, from, to } = {}) {
+  const params = new URLSearchParams({ page, size });
+  if (status && status !== 'ALL') params.set('status', status);
+  if (from) params.set('from', `${from}T00:00:00`);
+  if (to) params.set('to', `${to}T23:59:59`);
+  const res = await apiFetch(`/api/admin/bookings?${params}`);
+  const data = await res.json();
+  if (!res.ok) throw { status: res.status, message: data.message ?? 'Failed to load bookings' };
+  return data;
+}
+
 export async function cancelBooking(id) {
   const res = await apiFetch(`/api/bookings/${id}/cancel`, { method: 'PATCH' });
   if (!res.ok) {

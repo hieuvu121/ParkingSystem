@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -35,7 +36,8 @@ class PredictionServiceTest {
     void predict_allSpotsHistoricallyBooked_returnsZero() {
         LocalDateTime target = LocalDateTime.of(2026, 5, 4, 9, 0);
         when(spotRepository.countByZone_idId(1L)).thenReturn(10L);
-        when(bookingRepository.countHistoricalBookings(eq(1L), anyInt(), eq(9))).thenReturn(10L);
+        when(bookingRepository.countHistoricalBookings(eq(1L), anyInt(), eq(9), any(), eq(target)))
+                .thenReturn(10L);
 
         var result = predictionService.predict(1L, target);
 
@@ -46,7 +48,8 @@ class PredictionServiceTest {
     void predict_noHistoricalBookings_returnsOne() {
         LocalDateTime target = LocalDateTime.of(2026, 5, 4, 9, 0);
         when(spotRepository.countByZone_idId(1L)).thenReturn(10L);
-        when(bookingRepository.countHistoricalBookings(eq(1L), anyInt(), eq(9))).thenReturn(0L);
+        when(bookingRepository.countHistoricalBookings(eq(1L), anyInt(), eq(9), any(), eq(target)))
+                .thenReturn(0L);
 
         var result = predictionService.predict(1L, target);
 
@@ -57,7 +60,8 @@ class PredictionServiceTest {
     void predict_halfBooked_returnsHalfProbability() {
         LocalDateTime target = LocalDateTime.of(2026, 5, 4, 9, 0);
         when(spotRepository.countByZone_idId(1L)).thenReturn(10L);
-        when(bookingRepository.countHistoricalBookings(eq(1L), anyInt(), eq(9))).thenReturn(5L);
+        when(bookingRepository.countHistoricalBookings(eq(1L), anyInt(), eq(9), any(), eq(target)))
+                .thenReturn(5L);
 
         var result = predictionService.predict(1L, target);
 
@@ -68,7 +72,8 @@ class PredictionServiceTest {
     void predict_historicalExceedsTotalSpots_clampsToZero() {
         LocalDateTime target = LocalDateTime.of(2026, 5, 4, 9, 0);
         when(spotRepository.countByZone_idId(1L)).thenReturn(10L);
-        when(bookingRepository.countHistoricalBookings(eq(1L), anyInt(), eq(9))).thenReturn(999L);
+        when(bookingRepository.countHistoricalBookings(eq(1L), anyInt(), eq(9), any(), eq(target)))
+                .thenReturn(999L);
 
         var result = predictionService.predict(1L, target);
 

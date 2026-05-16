@@ -2,6 +2,7 @@ package ParkingSystem.demo.repository;
 
 import ParkingSystem.demo.entity.BookingsEntity;
 import ParkingSystem.demo.enums.BookingStatus;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -64,6 +65,21 @@ public interface BookingRepository extends JpaRepository<BookingsEntity, Long> {
     List<Object[]> countByZoneInRange(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
     @Query(value = """
+        SELECT ps.zone_id,
+               SUM(EXTRACT(EPOCH FROM (
+                   LEAST(b.end_time, CAST(:to AS timestamp))
+                   - GREATEST(b.start_time, CAST(:from AS timestamp))
+               )) / 3600.0) AS booked_hours
+        FROM bookings b
+        JOIN parking_spots ps ON b.spot_id = ps.id
+        WHERE b.status IN (1, 2)
+          AND b.start_time < :to
+          AND b.end_time > :from
+        GROUP BY ps.zone_id
+    """, nativeQuery = true)
+    List<Object[]> bookedHoursByZoneInRange(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    @Query(value = """
         SELECT COUNT(*) FROM bookings b
         JOIN parking_spots ps ON b.spot_id = ps.id
         WHERE ps.zone_id = :zoneId AND b.status IN (1, 2)
@@ -75,12 +91,36 @@ public interface BookingRepository extends JpaRepository<BookingsEntity, Long> {
         JOIN parking_spots ps ON b.spot_id = ps.id
         WHERE ps.zone_id = :zoneId
           AND b.status IN (1, 2)
+          AND b.start_time >= :from
+          AND b.start_time <= :to
           AND EXTRACT(DOW FROM b.start_time) = :pgDow
           AND EXTRACT(HOUR FROM b.start_time) = :hour
     """, nativeQuery = true)
     long countHistoricalBookings(@Param("zoneId") Long zoneId,
                                   @Param("pgDow") int pgDow,
-                                  @Param("hour") int hour);
+                                  @Param("hour") int hour,
+                                  @Param("from") LocalDateTime from,
+                                  @Param("to") LocalDateTime to);
+
+    long countByUserId_IdAndStatus(Long userId, BookingStatus status);
+
+    @Query(value = """
+        SELECT b FROM BookingsEntity b
+        WHERE (:status IS NULL OR b.status = :status)
+          AND b.startTime >= :from
+          AND b.startTime <= :to
+        ORDER BY b.startTime DESC
+        """,
+        countQuery = """
+        SELECT COUNT(b) FROM BookingsEntity b
+        WHERE (:status IS NULL OR b.status = :status)
+          AND b.startTime >= :from
+          AND b.startTime <= :to
+        """)
+    Page<BookingsEntity> findAdminBookings(@Param("status") BookingStatus status,
+                                           @Param("from") LocalDateTime from,
+                                           @Param("to") LocalDateTime to,
+                                           Pageable pageable);
 
     @Query("""
         SELECT b FROM BookingsEntity b

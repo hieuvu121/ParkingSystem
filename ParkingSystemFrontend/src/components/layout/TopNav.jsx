@@ -3,9 +3,12 @@ export default function TopNav({ page, setPage, user, wsConnected }) {
 
   const navItems = isAdmin
     ? [
-        { key: 'dashboard',       label: 'Dashboard' },
-        { key: 'admin-users',     label: 'Users' },
-        { key: 'admin-analytics', label: 'Analytics' },
+        { key: 'dashboard',        label: 'Dashboard' },
+        { key: 'admin-users',      label: 'Users' },
+        { key: 'admin-bookings',   label: 'Bookings' },
+        { key: 'admin-zones',      label: 'Zones' },
+        { key: 'admin-packages',   label: 'Packages' },
+        { key: 'admin-analytics',  label: 'Analytics' },
       ]
     : [
         { key: 'parking',  label: 'Parking' },

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { getZones, getDashboard, getSpots } from '../api/dashboard';
+import { getRecommendation } from '../api/recommendation';
 import ZoneCard from '../components/parking/ZoneCard';
 import SpotGrid from '../components/dashboard/SpotGrid';
 import BookingModal from '../components/parking/BookingModal';
@@ -15,6 +16,10 @@ export default function ParkingZonePage({ onWsStatusChange, onBooked }) {
   const [loadingZone, setLoadingZone] = useState(false);
   const [error, setError] = useState('');
   const [modalSpot, setModalSpot] = useState(null);
+  const [recommendation, setRecommendation] = useState(null);
+  const [recLoading, setRecLoading] = useState(false);
+  const [recError, setRecError] = useState('');
+  const [recExpanded, setRecExpanded] = useState(false);
 
   const selectedZoneIdRef = useRef(selectedZoneId);
   useEffect(() => { selectedZoneIdRef.current = selectedZoneId; }, [selectedZoneId]);
@@ -65,7 +70,21 @@ export default function ParkingZonePage({ onWsStatusChange, onBooked }) {
     return () => { ignore = true; };
   }, [selectedZoneId]);
 
+  useEffect(() => {
+    let ignore = false;
+    setRecLoading(true);
+    setRecError('');
+    getRecommendation()
+      .then((rec) => { if (!ignore) setRecommendation(rec); })
+      .catch((err) => { if (!ignore) setRecError(err.message ?? 'Failed to load recommendation'); })
+      .finally(() => { if (!ignore) setRecLoading(false); });
+    return () => { ignore = true; };
+  }, []);
+
   const selectedZone = zones.find((z) => z.id === selectedZoneId);
+  const recommendedZone = recommendation
+    ? zones.find((z) => z.id === recommendation.zoneId)
+    : null;
 
   if (loadingInit) {
     return (
@@ -94,6 +113,58 @@ export default function ParkingZonePage({ onWsStatusChange, onBooked }) {
     <div className="min-h-screen bg-[#111111] text-white">
       {!selectedZoneId && (
         <div className="max-w-2xl mx-auto px-4 py-8">
+          <div className="mb-6 rounded-2xl border border-[#2C2C2E] bg-[#1C1C1E] p-4">
+            {!recExpanded && (
+              <button
+                type="button"
+                onClick={() => setRecExpanded(true)}
+                className="rounded-full bg-[#F5D26B] px-4 py-2 text-xs font-semibold text-black"
+              >
+                View suggested zone
+              </button>
+            )}
+            {recExpanded && (
+              <>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs uppercase tracking-widest text-[#A1A1AA]">Best zone to park</p>
+                  <button
+                    type="button"
+                    onClick={() => setRecExpanded(false)}
+                    className="text-xs text-[#A1A1AA] hover:text-white"
+                  >
+                    Hide
+                  </button>
+                </div>
+                {recLoading && (
+                  <p className="mt-2 text-sm text-[#A1A1AA]">Finding the best zone…</p>
+                )}
+                {!recLoading && recError && (
+                  <p className="mt-2 text-sm text-red-400">{recError}</p>
+                )}
+                {!recLoading && !recError && recommendation && (
+                  <div className="mt-3 flex flex-col gap-2">
+                    <p className="text-base font-semibold">
+                      {recommendedZone
+                        ? `${recommendedZone.type} · Level ${recommendedZone.level}`
+                        : `Zone ${recommendation.zoneId}`}
+                    </p>
+                    <p className="text-xs text-[#A1A1AA]">
+                      {recommendation.reason} · {recommendation.availableSpots} open ·
+                      {(recommendation.predictedProbability * 100).toFixed(0)}% predicted availability
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedZoneId(recommendation.zoneId)}
+                      className="self-start rounded-full bg-[#F5D26B] px-4 py-2 text-xs font-semibold text-black"
+                    >
+                      View zone
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
           <h1 className="text-2xl font-bold mb-1">Choose a Parking Zone</h1>
           <p className="text-[#A1A1AA] text-sm mb-6">Select a zone to see available spots</p>
           <div className="grid grid-cols-2 gap-4">
@@ -126,6 +197,63 @@ export default function ParkingZonePage({ onWsStatusChange, onBooked }) {
             <h1 className="text-white font-bold text-lg">
               {selectedZone ? `${selectedZone.type} · Level ${selectedZone.level}` : ''}
             </h1>
+          </div>
+
+          <div className="mb-4 rounded-2xl border border-[#2C2C2E] bg-[#1C1C1E] p-4">
+            {!recExpanded && (
+              <button
+                type="button"
+                onClick={() => setRecExpanded(true)}
+                className="rounded-full bg-[#F5D26B] px-4 py-2 text-xs font-semibold text-black"
+              >
+                View suggested zone
+              </button>
+            )}
+            {recExpanded && (
+              <>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs uppercase tracking-widest text-[#A1A1AA]">Best zone to park</p>
+                  <button
+                    type="button"
+                    onClick={() => setRecExpanded(false)}
+                    className="text-xs text-[#A1A1AA] hover:text-white"
+                  >
+                    Hide
+                  </button>
+                </div>
+                {recLoading && (
+                  <p className="mt-2 text-sm text-[#A1A1AA]">Finding the best zone…</p>
+                )}
+                {!recLoading && recError && (
+                  <p className="mt-2 text-sm text-red-400">{recError}</p>
+                )}
+                {!recLoading && !recError && recommendation && (
+                  <div className="mt-3 flex flex-col gap-2">
+                    <p className="text-base font-semibold">
+                      {recommendedZone
+                        ? `${recommendedZone.type} · Level ${recommendedZone.level}`
+                        : `Zone ${recommendation.zoneId}`}
+                    </p>
+                    <p className="text-xs text-[#A1A1AA]">
+                      {recommendation.reason} · {recommendation.availableSpots} open ·
+                      {(recommendation.predictedProbability * 100).toFixed(0)}% predicted availability
+                    </p>
+                    {recommendation.zoneId !== selectedZoneId && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedZoneId(recommendation.zoneId)}
+                        className="self-start rounded-full bg-[#F5D26B] px-4 py-2 text-xs font-semibold text-black"
+                      >
+                        Switch to recommended zone
+                      </button>
+                    )}
+                    {recommendation.zoneId === selectedZoneId && (
+                      <p className="text-xs text-[#4ADE80]">You are viewing the recommended zone.</p>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
           <div className="bg-[#1C1C1E] rounded-2xl">

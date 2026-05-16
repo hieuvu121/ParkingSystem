@@ -37,7 +37,11 @@ public class AnalyticsController {
     }
 
     @GetMapping("/utilization")
-    public ResponseEntity<List<UtilizationResponse>> utilization() {
-        return ResponseEntity.ok(analyticsService.getUtilization());
+    public ResponseEntity<List<UtilizationResponse>> utilization(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to) {
+        LocalDateTime resolvedFrom = from != null ? from : LocalDateTime.now().minusDays(30);
+        LocalDateTime resolvedTo   = to   != null ? to   : LocalDateTime.now();
+        return ResponseEntity.ok(analyticsService.getUtilization(resolvedFrom, resolvedTo));
     }
 }

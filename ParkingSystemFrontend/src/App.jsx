@@ -6,6 +6,10 @@ import ParkingZonePage from './pages/ParkingZonePage';
 import BookingsPage from './pages/BookingsPage';
 import AccountPage from './pages/AccountPage';
 import AdminUsersPage from './pages/AdminUsersPage';
+import AdminBookingsPage from './pages/AdminBookingsPage';
+import AdminZonesPage from './pages/AdminZonesPage';
+import AdminPackagesPage from './pages/AdminPackagesPage';
+import AdminAnalyticsPage from './pages/AdminAnalyticsPage';
 import TopNav from './components/layout/TopNav';
 
 export default function App() {
@@ -30,6 +34,10 @@ export default function App() {
         <DashboardPage onWsStatusChange={setWsConnected} />
       )}
       {isAdmin && page === 'admin-users' && <AdminUsersPage />}
+      {isAdmin && page === 'admin-bookings' && <AdminBookingsPage />}
+      {isAdmin && page === 'admin-zones' && <AdminZonesPage />}
+      {isAdmin && page === 'admin-packages' && <AdminPackagesPage />}
+      {isAdmin && page === 'admin-analytics' && <AdminAnalyticsPage />}
       {page === 'account' && <AccountPage />}
 
       {!isAdmin && page === 'parking' && (
