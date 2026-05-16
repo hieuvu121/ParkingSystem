@@ -50,6 +50,9 @@ public class OpenAiService {
                 .retrieve()
                 .body(ChatResponse.class);
 
+        if (response == null || response.choices() == null || response.choices().isEmpty()) {
+            throw new IllegalStateException("OpenAI returned no choices");
+        }
         return response.choices().get(0).message().content().trim();
     }
 
