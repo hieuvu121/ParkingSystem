@@ -37,10 +37,12 @@ public class OpenAiService {
 
         ChatRequest request = new ChatRequest(model, List.of(
                 new ChatMessage("system",
-                        "You are a parking assistant. Respond with exactly one concise sentence " +
-                        "(max 100 characters) recommending a parking zone."),
+                        "You are a parking assistant. Always respond with exactly one sentence (max 150 characters) " +
+                        "that recommends the zone AND mentions the current weather condition AND explains why " +
+                        "both the weather and the availability make this zone a good choice. " +
+                        "Always include the weather condition word (e.g. sunny, rainy, cloudy, hot, cold)."),
                 new ChatMessage("user", userContent)
-        ), 60);
+        ), 100);
 
         ChatResponse response = restClient.post()
                 .uri("https://api.openai.com/v1/chat/completions")
