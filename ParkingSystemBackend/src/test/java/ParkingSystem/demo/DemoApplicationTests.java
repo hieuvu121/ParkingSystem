@@ -13,7 +13,12 @@ import org.springframework.test.context.TestPropertySource;
         "spring.mail.username=test@test.com",
         "spring.mail.password=test",
         "spring.datasource.url=jdbc:postgresql://localhost:5432/parkingSystem",
-        "spring.jpa.hibernate.ddl-auto=none"
+        "spring.jpa.hibernate.ddl-auto=none",
+        "openai.api-key=test-openai-key",
+        "openai.model=gpt-4o-mini",
+        "weather.api-key=test-weather-key",
+        "weather.default-lat=10.7769",
+        "weather.default-lng=106.7009"
 })
 class DemoApplicationTests {
 
