@@ -1,9 +1,11 @@
 package ParkingSystem.demo.controller;
 
 import ParkingSystem.demo.dto.PageResponse;
+import ParkingSystem.demo.dto.user.UpdatePlateRequest;
 import ParkingSystem.demo.dto.user.UpdateProfileRequest;
 import ParkingSystem.demo.dto.user.UpdateRoleRequest;
 import ParkingSystem.demo.dto.user.UserProfileResponse;
+import ParkingSystem.demo.exception.ConflictException;
 import ParkingSystem.demo.entity.UserEntity;
 import ParkingSystem.demo.enums.Role;
 import ParkingSystem.demo.security.JwtService;
@@ -98,5 +100,32 @@ class UserControllerTest {
         doNothing().when(userService).deleteUser(1L);
         mockMvc.perform(delete("/api/admin/users/1"))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void updatePlate_validRequest_returns200() throws Exception {
+        setAuthUser(1L);
+        when(userService.updatePlate(eq(1L), eq("ABC-1234"))).thenReturn(
+                new UserProfileResponse(1L, "John Doe", "john@test.com", Role.USERS, "ABC-1234"));
+        UpdatePlateRequest req = new UpdatePlateRequest();
+        req.setPlateNumber("ABC-1234");
+        mockMvc.perform(patch("/api/users/me/plate")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.plateNumber").value("ABC-1234"));
+    }
+
+    @Test
+    void updatePlate_duplicatePlate_returns409() throws Exception {
+        setAuthUser(1L);
+        when(userService.updatePlate(eq(1L), any()))
+                .thenThrow(new ConflictException("Plate number already in use"));
+        UpdatePlateRequest req = new UpdatePlateRequest();
+        req.setPlateNumber("XYZ-9999");
+        mockMvc.perform(patch("/api/users/me/plate")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isConflict());
     }
 }
