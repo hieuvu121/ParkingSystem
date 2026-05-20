@@ -43,6 +43,9 @@ public class UserEntity implements UserDetails {
     @Column
     private String verificationToken;
 
+    @Column(unique = true)
+    private String plateNumber;
+
     @OneToMany(mappedBy = "userId")
     private List<SubscriptionsEntity> subscriptionName = new ArrayList<>();
 

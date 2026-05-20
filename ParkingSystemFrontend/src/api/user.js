@@ -20,6 +20,15 @@ export async function updateMe(fullName) {
   return res.json();
 }
 
+export async function updateMyPlate(plateNumber) {
+  const res = await apiFetch('/api/users/me/plate', {
+    method: 'PATCH',
+    body: JSON.stringify({ plateNumber }),
+  });
+  if (!res.ok) await parseError(res, 'Failed to update plate number');
+  return res.json();
+}
+
 export async function listUsers(page = 0, size = 20) {
   const params = new URLSearchParams({ page, size });
   const res = await apiFetch(`/api/admin/users?${params}`);

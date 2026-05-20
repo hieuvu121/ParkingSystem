@@ -1,6 +1,7 @@
 package ParkingSystem.demo.controller;
 
 import ParkingSystem.demo.dto.PageResponse;
+import ParkingSystem.demo.dto.user.UpdatePlateRequest;
 import ParkingSystem.demo.dto.user.UpdateProfileRequest;
 import ParkingSystem.demo.dto.user.UpdateRoleRequest;
 import ParkingSystem.demo.dto.user.UserProfileResponse;
@@ -32,6 +33,14 @@ public class UserController {
             @AuthenticationPrincipal UserEntity user,
             @Valid @RequestBody UpdateProfileRequest request) {
         return ResponseEntity.ok(userService.updateProfile(user.getId(), request.getFullName()));
+    }
+
+    @PreAuthorize("hasRole('USERS')")
+    @PatchMapping("/api/users/me/plate")
+    public ResponseEntity<UserProfileResponse> updatePlate(
+            @AuthenticationPrincipal UserEntity user,
+            @Valid @RequestBody UpdatePlateRequest request) {
+        return ResponseEntity.ok(userService.updatePlate(user.getId(), request.getPlateNumber()));
     }
 
     @GetMapping("/api/admin/users")

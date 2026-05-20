@@ -4,9 +4,11 @@ import ParkingSystem.demo.dto.PageResponse;
 import ParkingSystem.demo.dto.user.UserProfileResponse;
 import ParkingSystem.demo.entity.UserEntity;
 import ParkingSystem.demo.enums.Role;
+import ParkingSystem.demo.exception.ConflictException;
 import ParkingSystem.demo.exception.ResourceNotFoundException;
 import ParkingSystem.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +28,17 @@ public class UserService {
         UserEntity user = findOrThrow(userId);
         user.setFullName(fullName);
         return toResponse(userRepository.save(user));
+    }
+
+    public UserProfileResponse updatePlate(Long userId, String plateNumber) {
+        UserEntity user = findOrThrow(userId);
+        String trimmed = (plateNumber == null || plateNumber.isBlank()) ? null : plateNumber.trim();
+        user.setPlateNumber(trimmed);
+        try {
+            return toResponse(userRepository.saveAndFlush(user));
+        } catch (DataIntegrityViolationException e) {
+            throw new ConflictException("Plate number already in use");
+        }
     }
 
     public UserProfileResponse changeRole(Long userId, Role role) {
@@ -51,6 +64,6 @@ public class UserService {
     }
 
     private UserProfileResponse toResponse(UserEntity u) {
-        return new UserProfileResponse(u.getId(), u.getFullName(), u.getEmail(), u.getRole());
+        return new UserProfileResponse(u.getId(), u.getFullName(), u.getEmail(), u.getRole(), u.getPlateNumber());
     }
 }
