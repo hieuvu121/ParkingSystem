@@ -2,6 +2,7 @@ package ParkingSystem.demo.service;
 
 import ParkingSystem.demo.entity.UserEntity;
 import ParkingSystem.demo.enums.Role;
+import ParkingSystem.demo.exception.ConflictException;
 import ParkingSystem.demo.exception.ResourceNotFoundException;
 import ParkingSystem.demo.repository.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -85,5 +86,30 @@ class UserServiceTest {
         var result = userService.listAll(PageRequest.of(0, 20));
         assertThat(result.content()).hasSize(2);
         assertThat(result.content().get(0).fullName()).isEqualTo("Alice");
+    }
+
+    @Test
+    void updatePlate_existingUser_setsPlateNumber() {
+        var u = user(1L, "Alice", Role.USERS);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(u));
+        when(userRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        var result = userService.updatePlate(1L, "ABC-1234");
+        assertThat(result.plateNumber()).isEqualTo("ABC-1234");
+    }
+
+    @Test
+    void updatePlate_blankPlate_clearsPlateNumber() {
+        var u = user(1L, "Alice", Role.USERS);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(u));
+        when(userRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        var result = userService.updatePlate(1L, "   ");
+        assertThat(result.plateNumber()).isNull();
+    }
+
+    @Test
+    void updatePlate_unknownUser_throwsNotFound() {
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> userService.updatePlate(99L, "ABC-1234"))
+                .isInstanceOf(ResourceNotFoundException.class);
     }
 }
