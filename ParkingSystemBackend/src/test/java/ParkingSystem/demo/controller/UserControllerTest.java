@@ -41,7 +41,7 @@ class UserControllerTest {
     @MockitoBean UserDetailsServiceImpl userDetailsService;
 
     private UserProfileResponse profile(Long id) {
-        return new UserProfileResponse(id, "John Doe", "john@test.com", Role.USERS);
+        return new UserProfileResponse(id, "John Doe", "john@test.com", Role.USERS, null);
     }
 
     private void setAuthUser(Long id) {

@@ -51,6 +51,6 @@ public class UserService {
     }
 
     private UserProfileResponse toResponse(UserEntity u) {
-        return new UserProfileResponse(u.getId(), u.getFullName(), u.getEmail(), u.getRole());
+        return new UserProfileResponse(u.getId(), u.getFullName(), u.getEmail(), u.getRole(), u.getPlateNumber());
     }
 }
