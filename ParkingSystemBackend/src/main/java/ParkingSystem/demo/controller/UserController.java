@@ -35,10 +35,11 @@ public class UserController {
         return ResponseEntity.ok(userService.updateProfile(user.getId(), request.getFullName()));
     }
 
+    @PreAuthorize("hasRole('USERS')")
     @PatchMapping("/api/users/me/plate")
     public ResponseEntity<UserProfileResponse> updatePlate(
             @AuthenticationPrincipal UserEntity user,
-            @RequestBody UpdatePlateRequest request) {
+            @Valid @RequestBody UpdatePlateRequest request) {
         return ResponseEntity.ok(userService.updatePlate(user.getId(), request.getPlateNumber()));
     }
 
