@@ -93,7 +93,7 @@ class UserServiceTest {
     void updatePlate_existingUser_setsPlateNumber() {
         var u = user(1L, "Alice", Role.USERS);
         when(userRepository.findById(1L)).thenReturn(Optional.of(u));
-        when(userRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(userRepository.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
         var result = userService.updatePlate(1L, "ABC-1234");
         assertThat(result.plateNumber()).isEqualTo("ABC-1234");
     }
@@ -102,7 +102,7 @@ class UserServiceTest {
     void updatePlate_blankPlate_clearsPlateNumber() {
         var u = user(1L, "Alice", Role.USERS);
         when(userRepository.findById(1L)).thenReturn(Optional.of(u));
-        when(userRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(userRepository.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
         var result = userService.updatePlate(1L, "   ");
         assertThat(result.plateNumber()).isNull();
     }
@@ -118,7 +118,7 @@ class UserServiceTest {
     void updatePlate_duplicatePlate_throwsConflict() {
         var u = user(1L, "Alice", Role.USERS);
         when(userRepository.findById(1L)).thenReturn(Optional.of(u));
-        when(userRepository.save(any())).thenThrow(DataIntegrityViolationException.class);
+        when(userRepository.saveAndFlush(any())).thenThrow(DataIntegrityViolationException.class);
         assertThatThrownBy(() -> userService.updatePlate(1L, "ABC-1234"))
                 .isInstanceOf(ConflictException.class)
                 .hasMessage("Plate number already in use");

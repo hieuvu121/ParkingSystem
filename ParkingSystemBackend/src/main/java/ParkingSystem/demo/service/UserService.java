@@ -35,7 +35,7 @@ public class UserService {
         String trimmed = (plateNumber == null || plateNumber.isBlank()) ? null : plateNumber.trim();
         user.setPlateNumber(trimmed);
         try {
-            return toResponse(userRepository.save(user));
+            return toResponse(userRepository.saveAndFlush(user));
         } catch (DataIntegrityViolationException e) {
             throw new ConflictException("Plate number already in use");
         }
