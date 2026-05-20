@@ -39,12 +39,14 @@ public class BookingService {
     public BookingResponse create(UserEntity user, Long spotId,
                                   LocalDateTime startTime, LocalDateTime endTime,
                                   String paymentType) {
+
         if ("SUBSCRIPTION".equals(paymentType)) {
             long active = bookingRepository.countByUserId_IdAndStatus(user.getId(), BookingStatus.APPROVED);
             if (active > 0) {
                 throw new ConflictException("Subscription users can only have 1 active booking at a time");
             }
         }
+
         ParkingSpotsEntity spot = spotService.findOrThrow(spotId);
         List<BookingsEntity> overlapping = bookingRepository.findOverlapping(spotId, startTime, endTime);
         if (!overlapping.isEmpty()) {
