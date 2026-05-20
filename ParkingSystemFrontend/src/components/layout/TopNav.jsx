@@ -13,6 +13,7 @@ export default function TopNav({ page, setPage, user, wsConnected }) {
     : [
         { key: 'parking',  label: 'Parking' },
         { key: 'bookings', label: 'Bookings' },
+        { key: 'profile',  label: 'Profile' },
       ];
 
   return (
