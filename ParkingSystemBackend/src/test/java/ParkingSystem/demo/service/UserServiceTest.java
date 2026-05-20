@@ -10,6 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -111,5 +112,15 @@ class UserServiceTest {
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
         assertThatThrownBy(() -> userService.updatePlate(99L, "ABC-1234"))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void updatePlate_duplicatePlate_throwsConflict() {
+        var u = user(1L, "Alice", Role.USERS);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(u));
+        when(userRepository.save(any())).thenThrow(DataIntegrityViolationException.class);
+        assertThatThrownBy(() -> userService.updatePlate(1L, "ABC-1234"))
+                .isInstanceOf(ConflictException.class)
+                .hasMessage("Plate number already in use");
     }
 }
