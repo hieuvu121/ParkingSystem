@@ -5,6 +5,7 @@ import DashboardPage from './pages/DashboardPage';
 import ParkingZonePage from './pages/ParkingZonePage';
 import BookingsPage from './pages/BookingsPage';
 import AccountPage from './pages/AccountPage';
+import ProfilePage from './pages/ProfilePage';
 import AdminUsersPage from './pages/AdminUsersPage';
 import AdminBookingsPage from './pages/AdminBookingsPage';
 import AdminZonesPage from './pages/AdminZonesPage';
@@ -39,6 +40,7 @@ export default function App() {
       {isAdmin && page === 'admin-packages' && <AdminPackagesPage />}
       {isAdmin && page === 'admin-analytics' && <AdminAnalyticsPage />}
       {page === 'account' && <AccountPage />}
+      {!isAdmin && page === 'profile' && <ProfilePage />}
 
       {!isAdmin && page === 'parking' && (
         <ParkingZonePage
