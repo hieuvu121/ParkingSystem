@@ -17,7 +17,7 @@ export default function TopNav({ page, setPage, user, wsConnected }) {
       ];
 
   return (
-    <header className="bg-[#1C1C1E] border-b border-[#2C2C2E] px-4 py-3 flex items-center gap-4">
+    <footer className="bg-[#1C1C1E] border-t border-[#2C2C2E] px-4 py-3 flex items-center gap-4">
       <span className="text-[#F5D26B] text-xl font-bold select-none">🅿</span>
       <span className="text-white font-semibold text-lg mr-2 hidden sm:block">Parking System</span>
 
@@ -59,6 +59,6 @@ export default function TopNav({ page, setPage, user, wsConnected }) {
         />
         <span className="hidden sm:block">{wsConnected ? 'Live' : 'Connecting…'}</span>
       </span>
-    </header>
+    </footer>
   );
 }
