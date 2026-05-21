@@ -28,29 +28,30 @@ export default function App() {
   const isAdmin = user?.role === 'ADMIN';
 
   return (
-    <div className="min-h-screen bg-[#111111]">
+    <div className="min-h-screen bg-[#111111] flex flex-col">
+      <div className="flex-1">
+        {isAdmin && page === 'dashboard' && (
+          <DashboardPage onWsStatusChange={setWsConnected} />
+        )}
+        {isAdmin && page === 'admin-users' && <AdminUsersPage />}
+        {isAdmin && page === 'admin-bookings' && <AdminBookingsPage />}
+        {isAdmin && page === 'admin-zones' && <AdminZonesPage />}
+        {isAdmin && page === 'admin-packages' && <AdminPackagesPage />}
+        {isAdmin && page === 'admin-analytics' && <AdminAnalyticsPage />}
+        {page === 'account' && <AccountPage />}
+        {!isAdmin && page === 'profile' && <ProfilePage />}
+
+        {!isAdmin && page === 'parking' && (
+          <ParkingZonePage
+            onWsStatusChange={setWsConnected}
+            onBooked={() => setBookingRefreshKey((k) => k + 1)}
+          />
+        )}
+        {!isAdmin && page === 'bookings' && (
+          <BookingsPage refreshKey={bookingRefreshKey} />
+        )}
+      </div>
       <TopNav page={page} setPage={setPage} user={user} wsConnected={wsConnected} />
-
-      {isAdmin && page === 'dashboard' && (
-        <DashboardPage onWsStatusChange={setWsConnected} />
-      )}
-      {isAdmin && page === 'admin-users' && <AdminUsersPage />}
-      {isAdmin && page === 'admin-bookings' && <AdminBookingsPage />}
-      {isAdmin && page === 'admin-zones' && <AdminZonesPage />}
-      {isAdmin && page === 'admin-packages' && <AdminPackagesPage />}
-      {isAdmin && page === 'admin-analytics' && <AdminAnalyticsPage />}
-      {page === 'account' && <AccountPage />}
-      {!isAdmin && page === 'profile' && <ProfilePage />}
-
-      {!isAdmin && page === 'parking' && (
-        <ParkingZonePage
-          onWsStatusChange={setWsConnected}
-          onBooked={() => setBookingRefreshKey((k) => k + 1)}
-        />
-      )}
-      {!isAdmin && page === 'bookings' && (
-        <BookingsPage refreshKey={bookingRefreshKey} />
-      )}
     </div>
   );
 }

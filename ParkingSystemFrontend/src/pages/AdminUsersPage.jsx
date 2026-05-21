@@ -182,13 +182,25 @@ export default function AdminUsersPage() {
   const [confirm, setConfirm] = useState(null); // { type: 'role'|'delete', user, newRole? }
   const [busy, setBusy] = useState(false);
   const [subUser, setSubUser] = useState(null); // user whose subscription modal is open
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
-    listUsers(0, 20)
+    listUsers(0, 200)
       .then((data) => setUsers(data.content ?? data))
       .catch((err) => setError(err.message ?? 'Failed to load users'))
       .finally(() => setLoading(false));
   }, []);
+
+  const filteredUsers = search.trim()
+    ? users.filter((u) => {
+        const q = search.toLowerCase();
+        return (
+          u.fullName?.toLowerCase().includes(q) ||
+          u.email?.toLowerCase().includes(q) ||
+          u.plateNumber?.toLowerCase().includes(q)
+        );
+      })
+    : users;
 
   async function execConfirm() {
     setBusy(true);
@@ -224,26 +236,42 @@ export default function AdminUsersPage() {
   return (
     <div className="min-h-screen bg-[#111111] text-white px-4 py-6">
       <div className="max-w-4xl mx-auto">
-        <h2 className="text-xl font-semibold mb-4">
-          User Management{' '}
-          <span className="text-[#A1A1AA] text-sm font-normal">({users.length})</span>
-        </h2>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+          <h2 className="text-xl font-semibold">
+            User Management{' '}
+            <span className="text-[#A1A1AA] text-sm font-normal">
+              ({filteredUsers.length}{search.trim() ? ` of ${users.length}` : ''})
+            </span>
+          </h2>
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name, email or plate…"
+            className="sm:ml-auto bg-[#1C1C1E] border border-[#2C2C2E] text-white text-sm rounded-xl px-4 py-2 outline-none focus:border-[#F5D26B] w-full sm:w-72 placeholder-[#6B7280]"
+          />
+        </div>
         {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
 
         <div className="bg-[#1C1C1E] rounded-2xl overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[#2C2C2E] text-[#A1A1AA] text-xs uppercase tracking-wider">
-                <th className="text-left px-4 py-3">Name</th>
+                <th className="text-left px-4 py-3">Plate</th>
                 <th className="text-left px-4 py-3 hidden sm:table-cell">Email</th>
                 <th className="text-left px-4 py-3">Role</th>
                 <th className="text-right px-4 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => (
+              {filteredUsers.map((u) => (
                 <tr key={u.id} className="border-b border-[#2C2C2E] last:border-0 hover:bg-[#2C2C2E] transition">
-                  <td className="px-4 py-3 font-medium">{u.fullName}</td>
+                  <td className="px-4 py-3">
+                    {u.plateNumber
+                      ? <span className="font-mono text-[#F5D26B] tracking-wider">{u.plateNumber}</span>
+                      : <span className="text-[#6B7280]">—</span>}
+                    <p className="text-[#A1A1AA] text-xs mt-0.5">{u.fullName}</p>
+                  </td>
                   <td className="px-4 py-3 text-[#A1A1AA] hidden sm:table-cell">{u.email}</td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
