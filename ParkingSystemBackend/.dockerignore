@@ -1,8 +1,12 @@
-target
-.git
+target/
+.git/
 .gitignore
-.idea
-.vscode
-node_modules
+.idea/
+.vscode/
+node_modules/
 .env
 .DS_Store
+*.iml
+*.ipr
+*.iws
+docs/
