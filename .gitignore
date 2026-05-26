@@ -2,6 +2,7 @@
 # Local superpowers and worktrees
 .superpowers/
 .worktrees/
+.DS_Store
 
 # Superpowers docs
 /docs/
