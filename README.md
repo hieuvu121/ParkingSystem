@@ -77,7 +77,7 @@ cd ParkingSystemBackend
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/hieuvu121/ParkingSystem.git
+git clone -b Docker_Test https://github.com/hieuvu121/ParkingSystem.git
 ```
 
 2. Go into the backend folder:
