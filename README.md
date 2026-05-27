@@ -67,6 +67,48 @@ Base URL: `http://localhost:8080`
 cd ParkingSystemBackend
 ./mvnw test
 ```
+### Running with Docker
+
+#### Requirements
+- Docker Desktop
+- Git
+
+#### Steps
+
+1. Clone the repository:
+```bash
+git clone https://github.com/hieuvu121/ParkingSystem.git
+```
+
+2. Go into the backend folder:
+```bash
+cd ParkingSystem/ParkingSystemBackend
+```
+
+3. Create a `.env` file from the example file:
+```bash
+cp .env.example .env
+```
+
+4. Start the application:
+```bash
+docker compose up --build
+```
+
+5. Access the web app:
+```text
+http://localhost:8080
+```
+
+#### Stop the application
+```bash
+docker compose down
+```
+
+#### Reset the database completely
+```bash
+docker compose down -v
+```
 
 ---
 
